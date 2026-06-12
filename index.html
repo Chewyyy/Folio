@@ -221,6 +221,28 @@ input[type=file]{display:none}
   font-weight:900;
 }
 
+
+/* v13 screen-page map pagination */
+.paginating-badge{
+  position:absolute;
+  left:50%;
+  bottom:calc(84px + env(safe-area-inset-bottom,0px));
+  transform:translateX(-50%);
+  z-index:125;
+  background:rgba(72,72,76,.92);
+  color:#fff;
+  border-radius:999px;
+  padding:9px 14px;
+  font-size:12px;
+  font-weight:800;
+  box-shadow:0 8px 24px rgba(0,0,0,.24);
+  backdrop-filter:blur(16px);
+  display:none;
+}
+.paginating-badge.on{display:block}
+.reader-progress-fill{background:#007AFF!important}
+.reader-progress{background:#8E8E93!important}
+
 </style>
 </head>
 <body>
@@ -232,8 +254,8 @@ input[type=file]{display:none}
       <div class="hdr-left">
         <h1>Folio</h1>
         <div class="header-debug" id="debugRefresh">
-          <span class="ver" id="versionLabel">v12-page-counter-fix</span>
-          <a id="refreshBtn" href="./?v=v12-page-counter-fix-1781296082" role="button">Update</a>
+          <span class="ver" id="versionLabel">v13-page-map</span>
+          <a id="refreshBtn" href="./?v=v13-page-map-1781296816" role="button">Update</a>
         </div>
       </div>
       <button class="ibtn" id="addbtn" title="Add Book">
@@ -366,7 +388,7 @@ input[type=file]{display:none}
 </div>
 
 <script>
-const FOLIO_VERSION = 'v12-page-counter-fix';
+const FOLIO_VERSION = 'v13-page-map';
 
 function dbg(msg) {}
 
@@ -457,6 +479,10 @@ const A = {
   currentCfi: null,
   pendingTurn: null,
   suppressLocationPageUpdate: false,
+  pageMaps: {},
+  activePageMapKey: null,
+  activePageMap: null,
+  paginationRunning: false,
   chapterLeft: '',
   turningPage: false,
   navDirection: null,
@@ -473,6 +499,7 @@ async function persist() {
     await window.storage.set('f_sessions', JSON.stringify(A.sessions));
     await window.storage.set('f_progress', JSON.stringify(A.progress));
     await window.storage.set('f_reader_settings', JSON.stringify(A.readerSettings));
+    await window.storage.set('f_page_maps', JSON.stringify(A.pageMaps));
   } catch(e) {}
 }
 
@@ -486,6 +513,7 @@ async function hydrate() {
   A.sessions = await get('f_sessions', []);
   A.progress = await get('f_progress', {});
   A.readerSettings = Object.assign(A.readerSettings, await get('f_reader_settings', {}));
+  A.pageMaps = await get('f_page_maps', {});
 }
 
 async function storeEpub(id, buf) {
@@ -748,6 +776,142 @@ function updatePageStatus(showDetails=document.getElementById('reader')?.classLi
   if(top) top.textContent=showDetails?(A.chapterLeft||''):'';
   if(mp) mp.textContent=`${pct}%`;
 }
+
+function getReaderLayoutKey(bookId){
+  const v = document.getElementById('viewer');
+  const w = Math.round(v?.clientWidth || window.innerWidth || 0);
+  const h = Math.round(v?.clientHeight || window.innerHeight || 0);
+  const fs = A.readerSettings.fontSize || 100;
+  const theme = A.readerSettings.theme || 'light';
+  return `${bookId}|w${w}|h${h}|fs${fs}|${theme}`;
+}
+function updatePaginationBadge(text, on=true){
+  const el = document.getElementById('paginationBadge');
+  if(!el) return;
+  el.textContent = text;
+  el.classList.toggle('on', !!on);
+}
+function getCfiFromLocation(loc){
+  const start = getLocationStart(loc);
+  return start?.cfi || null;
+}
+function pageFromMapByCfi(cfi){
+  const map = A.activePageMap;
+  if(!map?.pages?.length || !cfi || !A.epubBook) return null;
+  let best = 1;
+  for (let i=0;i<map.pages.length;i++){
+    const pcfi = map.pages[i].cfi;
+    try{
+      if(A.epubBook.locations?.epubcfi?.compare){
+        // Not usually exposed; fallback below.
+      }
+    }catch(_){}
+    try{
+      // ePubCFI comparison is available on the global ePub factory in some builds.
+      const cmp = new ePub.CFI(pcfi).compare(new ePub.CFI(cfi));
+      if(cmp <= 0) best = map.pages[i].page;
+      else break;
+    }catch(_){
+      // Fallback: exact match only.
+      if(pcfi === cfi) return map.pages[i].page;
+    }
+  }
+  return best;
+}
+function setPageFromActiveMap(loc){
+  const cfi = getCfiFromLocation(loc);
+  const mapped = pageFromMapByCfi(cfi);
+  if(mapped) A.currentPage = mapped;
+  if(A.activePageMap?.totalPages) A.totalPages = A.activePageMap.totalPages;
+  updateLocationMeta(loc);
+  updatePageStatus();
+}
+async function buildScreenPageMap(bookId, startCfi){
+  if(!A.epubBook || !A.rend || A.paginationRunning) return;
+  const key = getReaderLayoutKey(bookId);
+  A.activePageMapKey = key;
+
+  const existing = A.pageMaps[key];
+  if(existing?.pages?.length && existing?.totalPages){
+    A.activePageMap = existing;
+    A.totalPages = existing.totalPages;
+    const loc = A.rend.currentLocation?.();
+    if(loc) setPageFromActiveMap(loc);
+    return;
+  }
+
+  A.paginationRunning = true;
+  updatePaginationBadge('Calculating pages…', true);
+
+  let originalCfi = startCfi;
+  try{
+    originalCfi = originalCfi || getCfiFromLocation(A.rend.currentLocation?.());
+  }catch(_){}
+
+  const map = {
+    key,
+    bookId,
+    fontSize:A.readerSettings.fontSize || 100,
+    width:Math.round(document.getElementById('viewer')?.clientWidth || window.innerWidth || 0),
+    height:Math.round(document.getElementById('viewer')?.clientHeight || window.innerHeight || 0),
+    created:Date.now(),
+    pages:[]
+  };
+
+  try{
+    await A.rend.display();
+    await new Promise(r=>setTimeout(r,80));
+
+    let lastCfi = null;
+    let guard = 0;
+
+    while(guard < 20000){
+      guard++;
+      const loc = A.rend.currentLocation?.();
+      const cfi = getCfiFromLocation(loc);
+      if(!cfi || cfi === lastCfi) break;
+
+      map.pages.push({page:map.pages.length+1, cfi});
+      lastCfi = cfi;
+
+      if(map.pages.length % 50 === 0){
+        updatePaginationBadge(`Calculating pages… ${map.pages.length}`, true);
+        await persist();
+        await new Promise(r=>setTimeout(r,0));
+      }
+
+      await A.rend.next();
+      await new Promise(r=>setTimeout(r,8));
+    }
+
+    map.totalPages = map.pages.length || 1;
+    A.pageMaps[key] = map;
+    A.activePageMap = map;
+    A.totalPages = map.totalPages;
+    await persist();
+
+    updatePaginationBadge(`Pages calculated: ${map.totalPages}`, true);
+    setTimeout(()=>updatePaginationBadge('', false), 1500);
+  }catch(e){
+    console.error('Pagination failed:', e);
+    updatePaginationBadge('Page calculation failed', true);
+    setTimeout(()=>updatePaginationBadge('', false), 2500);
+  }finally{
+    try{
+      if(originalCfi) await A.rend.display(originalCfi);
+      await new Promise(r=>setTimeout(r,120));
+      const loc = A.rend.currentLocation?.();
+      if(loc) setPageFromActiveMap(loc);
+    }catch(e){ console.error(e); }
+    A.paginationRunning = false;
+  }
+}
+function invalidateActivePageMap(){
+  A.activePageMap = null;
+  A.activePageMapKey = null;
+  A.totalPages = 0;
+}
+
 function getLocationStart(loc){
   return Array.isArray(loc) ? loc[0]?.start : loc?.start;
 }
@@ -770,18 +934,20 @@ function updateLocationMeta(loc){
 }
 function estimatePageFromLocation(loc){
   updateLocationMeta(loc);
+  if(A.activePageMap?.totalPages){
+    const mapped = pageFromMapByCfi(getCfiFromLocation(loc));
+    if(mapped) return mapped;
+  }
   const pct = A.currentPct || 0;
   const total = A.totalPages || 0;
-
-  let estimated = 1;
-  if (total) {
-    estimated = Math.max(1, Math.min(total, Math.round(pct * total) || 1));
-  } else {
-    estimated = Math.max(1, Math.round(pct * 1000) || 1);
-  }
-  return estimated;
+  if(total) return Math.max(1, Math.min(total, Math.round(pct * total) || 1));
+  return Math.max(1, Math.round(pct * 1000) || 1);
 }
 function setEstimatedPageFromLocation(loc){
+  if(A.activePageMap?.totalPages){
+    setPageFromActiveMap(loc);
+    return;
+  }
   const estimated = estimatePageFromLocation(loc);
   A.currentPage = estimated;
   updatePageStatus();
@@ -827,14 +993,11 @@ function closeSheet(id){document.getElementById(id)?.classList.remove('on'); if(
 function flattenToc(items,depth=0,out=[]){(items||[]).forEach(item=>{out.push({label:item.label||item.title||'Chapter',href:item.href,depth}); if(item.subitems?.length) flattenToc(item.subitems,depth+1,out)}); return out}
 function renderToc(){const list=document.getElementById('tocList'); if(!list) return; const toc=A.toc||[]; if(!toc.length){list.innerHTML='<div class="nodata">No table of contents found.</div>'; return} list.innerHTML=toc.map((item,i)=>`<button class="toc-item" data-i="${i}" style="padding-left:${8+item.depth*18}px"><span>${esc(item.label)}</span><span>›</span></button>`).join(''); list.querySelectorAll('.toc-item').forEach(btn=>btn.addEventListener('click',async()=>{const item=A.toc[Number(btn.dataset.i)]; if(item?.href&&A.rend){ closeSheet('tocSheet'); hideChrome(); await A.rend.display(item.href); setTimeout(()=>{ const loc=A.rend?.currentLocation?.(); if(loc) setEstimatedPageFromLocation(loc); },180); setTimeout(()=>{ const loc=A.rend?.currentLocation?.(); if(loc) setEstimatedPageFromLocation(loc); },650)}}))}
 async function stablePageTurn(direction){
-  if(!A.rend||A.turningPage) return;
+  if(!A.rend||A.turningPage||A.paginationRunning) return;
   A.turningPage=true;
   A.pendingTurn=direction;
   closeReaderMenu();
   hideChrome();
-
-  let before=null;
-  try{ before=A.rend.currentLocation?.(); }catch(_){}
 
   try{
     if(direction==='prev') await A.rend.prev();
@@ -842,8 +1005,15 @@ async function stablePageTurn(direction){
 
     setTimeout(()=>{
       try{
-        const after=A.rend.currentLocation?.();
-        applyCompletedPageTurn(direction,before,after);
+        const loc=A.rend.currentLocation?.();
+        if(A.activePageMap?.totalPages && loc){
+          setPageFromActiveMap(loc);
+        }else{
+          updateLocationMeta(loc);
+          if(direction==='next') A.currentPage=Math.min(A.totalPages||999999,(A.currentPage||1)+1);
+          else A.currentPage=Math.max(1,(A.currentPage||1)-1);
+          updatePageStatus(false);
+        }
       }catch(e){console.error(e)}
       A.pendingTurn=null;
     },140);
@@ -878,7 +1048,7 @@ async function openReader(bookId) {
   A.bookId = bookId;
 
   document.getElementById('rtitle').textContent  = bk.title;
-  A.currentPage=1; A.totalPages=0; A.currentPct=A.progress[bookId]?.pct||0; A.currentCfi=null; A.pendingTurn=null;
+  A.currentPage=1; A.totalPages=0; A.currentPct=A.progress[bookId]?.pct||0; A.currentCfi=null; A.pendingTurn=null; A.activePageMap=null; A.activePageMapKey=null;
   updatePageStatus(false);
   document.getElementById('timer').textContent   = '0:00';
   document.getElementById('rload').style.display = 'flex';
@@ -931,6 +1101,7 @@ async function mountEpub(buf, bkMeta) {
     await rend.display(saved||undefined);
     applyReaderSettings();
     setTimeout(()=>{ const loc=A.rend?.currentLocation?.(); if(loc) setEstimatedPageFromLocation(loc); },100);
+    setTimeout(()=>buildScreenPageMap(bkMeta.id, saved || getCfiFromLocation(A.rend?.currentLocation?.())), 650);
     dbg('Rendered first location');
 
     document.getElementById('rload').style.display = 'none';
