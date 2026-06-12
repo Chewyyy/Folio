@@ -255,10 +255,16 @@ html,body{height:100%;height:100dvh;background:#C8C3BC;
   transform:scale(1.045)!important;box-shadow:0 22px 45px rgba(0,0,0,.28)!important;
   opacity:.96;pointer-events:none;transition:none!important;will-change:left,top,transform}
 .bcard.dragging .morebtn{display:none}
+.bcard.selected{outline:3px solid #0A84FF;outline-offset:3px;box-shadow:0 10px 30px rgba(10,132,255,.22),var(--shadowLg)}
+.select-badge{position:absolute;right:8px;bottom:8px;z-index:3;width:28px;height:28px;border-radius:50%;background:#0A84FF;color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;box-shadow:0 3px 10px rgba(0,0,0,.25);border:2px solid #fff}
+.multi-count-badge{position:absolute;left:50%;top:-12px;transform:translateX(-50%);background:#0A84FF;color:#fff;border-radius:999px;
+  padding:5px 10px;font-size:12px;font-weight:900;box-shadow:0 4px 14px rgba(0,0,0,.26);white-space:nowrap}
 .bcard.drop-anim{transition:transform .18s cubic-bezier(.22,1,.36,1),box-shadow .18s ease}
 .book-placeholder{border-radius:var(--r);background:rgba(45,106,79,.10);outline:2px dashed rgba(45,106,79,.25);
   min-height:180px;box-shadow:none;transition:transform .16s ease,opacity .16s ease;opacity:.8}
 body.library-reordering{overflow:hidden;-webkit-user-select:none;user-select:none}
+body.library-reordering #lib .sa{overflow:hidden!important;touch-action:none!important;overscroll-behavior:none!important}
 body.library-reordering *{cursor:grabbing!important}
 
 .data-card{background:var(--card);border-radius:var(--r);padding:16px;box-shadow:var(--shadow);margin-bottom:20px}
@@ -497,8 +503,8 @@ body.reader-open{background:var(--read-bg)!important}
 </style>
 </head>
 <body>
-<input type="file" id="fi" accept=".epub" multiple>
-<input type="file" id="folderFi" accept=".epub" multiple webkitdirectory directory>
+<input type="file" id="fi" accept=".epub,application/epub+zip" multiple>
+<input type="file" id="folderFi" accept=".epub,application/epub+zip" multiple webkitdirectory directory>
 <input type="file" id="backupFi" accept=".json,.folio-backup.json,application/json">
 <div id="app">
 
@@ -508,7 +514,7 @@ body.reader-open{background:var(--read-bg)!important}
       <div class="hdr-left">
         <h1>Folio</h1>
         <div class="header-debug" id="debugRefresh">
-          <span class="ver" id="versionLabel">v14</span>
+          <span class="ver" id="versionLabel">v20-drag-multi</span>
           <a id="refreshBtn" href="./" role="button">Update</a>
         </div>
       </div>
@@ -877,7 +883,7 @@ body.reader-open{background:var(--read-bg)!important}
 </div>
 
 <script>
-const FOLIO_VERSION = 'v19-restore-drag-icons';
+const FOLIO_VERSION = 'v20-drag-multi';
 const CHARS_PER_PAGE = 1800;   // ≈ Apple Books / print pagination density
 
 function dbg(msg) {}
@@ -964,6 +970,8 @@ const A = {
   daySheetKey: null, finishBookId: null,
   longPressTmr: null, longPressed: false,
   reorderMode: false, draggingBookEl: null, dragPlaceholder: null, savedFolderName: '',
+  selectedBookIds: new Set(), selectionMode: false, dragMoved: false,
+  dragAutoScrollFrame: null, dragAutoScrollY: 0,
 };
 
 const STATE_KEYS = ['f_books','f_sessions','f_progress','f_reader_settings','f_goal','f_bookmarks','f_saved_folder_name'];
@@ -1245,9 +1253,11 @@ function renderLib() {
     const cov  = bk.cover
       ? `<img class="bcover" src="${bk.cover}" alt="">`
       : `<div class="bph" style="background:${grad}">📖</div>`;
-    return `<div class="bcard" data-id="${bk.id}">
+    const sel = A.selectedBookIds?.has?.(bk.id);
+    return `<div class="bcard ${sel?'selected':''}" data-id="${bk.id}">
       <div class="bcwrap">${cov}
         ${bk.finished?'<span class="fbadge">✓ Read</span>':''}
+        ${sel?'<span class="select-badge">✓</span>':''}
         <button class="morebtn" data-id="${bk.id}" title="More">⋯</button>
       </div>
       <div class="bbody">
@@ -1266,6 +1276,7 @@ function renderLib() {
     el.addEventListener('click', e => {
       if (e.target.closest('.morebtn')) return;
       if (A.longPressed) { A.longPressed = false; return; }
+      if (A.selectionMode) { toggleBookSelection(el.dataset.id); return; }
       openReader(el.dataset.id);
     });
     el.addEventListener('contextmenu', e => e.preventDefault());
@@ -1279,6 +1290,21 @@ function setReorderMode(on) {
   A.reorderMode = false;
   renderLib();
   toast('Press and hold any book, then drag it');
+}
+
+function toggleBookSelection(id) {
+  if (!A.selectedBookIds || !(A.selectedBookIds instanceof Set)) A.selectedBookIds = new Set();
+  if (A.selectedBookIds.has(id)) A.selectedBookIds.delete(id);
+  else A.selectedBookIds.add(id);
+  A.selectionMode = A.selectedBookIds.size > 0;
+  renderLib();
+  toast(A.selectionMode ? `${A.selectedBookIds.size} selected · hold one selected book to move them together` : 'Selection cleared', 1800);
+}
+
+function clearBookSelection() {
+  if (A.selectedBookIds?.size) A.selectedBookIds.clear();
+  A.selectionMode = false;
+  renderLib();
 }
 
 function updateBookOrderFromDom() {
@@ -1354,6 +1380,12 @@ function beginAppleBooksReorder(el, startEvent, startX, startY, pointerId) {
 
   A.longPressed = true;
   A.draggingBookEl = el;
+  A.dragMoved = false;
+  A.dragStartX = startX;
+  A.dragStartY = startY;
+  if (A.selectionMode && A.selectedBookIds?.size && !A.selectedBookIds.has(el.dataset.id)) {
+    A.selectedBookIds.add(el.dataset.id);
+  }
   window.getSelection?.().removeAllRanges?.();
   if (navigator.vibrate) navigator.vibrate(10);
 
@@ -1368,6 +1400,12 @@ function beginAppleBooksReorder(el, startEvent, startX, startY, pointerId) {
 
   el.classList.remove('reorder-hold');
   el.classList.add('dragging');
+  if (A.selectionMode && A.selectedBookIds?.size > 1 && A.selectedBookIds.has(el.dataset.id)) {
+    const count = document.createElement('span');
+    count.className = 'multi-count-badge';
+    count.textContent = `${A.selectedBookIds.size} books`;
+    el.appendChild(count);
+  }
   el.style.width = `${rect.width}px`;
   el.style.height = `${rect.height}px`;
   el.style.left = `${rect.left}px`;
@@ -1382,7 +1420,9 @@ function beginAppleBooksReorder(el, startEvent, startX, startY, pointerId) {
   const onMove = ev => {
     if (ev.pointerId !== pointerId) return;
     ev.preventDefault();
+    if (Math.abs(ev.clientX - startX) > 8 || Math.abs(ev.clientY - startY) > 8) A.dragMoved = true;
     moveLiftedBook(ev.clientX, ev.clientY);
+    autoScrollLibraryDuringDrag(ev.clientY);
     reorderPlaceholderAt(ev.clientX, ev.clientY);
   };
   const onEnd = ev => {
@@ -1413,6 +1453,41 @@ function moveLiftedBook(x, y) {
   el.style.top = `${y - (A.dragOffsetY || 0)}px`;
 }
 
+function libraryScrollContainer() {
+  return document.querySelector('#lib .sa');
+}
+
+function stopLibraryAutoScroll() {
+  if (A.dragAutoScrollFrame) cancelAnimationFrame(A.dragAutoScrollFrame);
+  A.dragAutoScrollFrame = null;
+  A.dragAutoScrollY = 0;
+}
+
+function autoScrollLibraryDuringDrag(clientY) {
+  const scroller = libraryScrollContainer();
+  if (!scroller) return;
+  const r = scroller.getBoundingClientRect();
+  const edge = 92;
+  let speed = 0;
+  if (clientY < r.top + edge) speed = -Math.ceil((r.top + edge - clientY) / 5);
+  else if (clientY > r.bottom - edge) speed = Math.ceil((clientY - (r.bottom - edge)) / 5);
+  speed = Math.max(-18, Math.min(18, speed));
+
+  A.dragAutoScrollY = speed;
+  if (!speed) { stopLibraryAutoScroll(); return; }
+  if (A.dragAutoScrollFrame) return;
+
+  const tick = () => {
+    const s = libraryScrollContainer();
+    if (!A.draggingBookEl || !s || !A.dragAutoScrollY) { stopLibraryAutoScroll(); return; }
+    s.scrollTop += A.dragAutoScrollY;
+    const rect = A.draggingBookEl.getBoundingClientRect();
+    reorderPlaceholderAt(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    A.dragAutoScrollFrame = requestAnimationFrame(tick);
+  };
+  A.dragAutoScrollFrame = requestAnimationFrame(tick);
+}
+
 function reorderPlaceholderAt(x, y) {
   const drag = A.draggingBookEl;
   const ph = A.dragPlaceholder;
@@ -1435,13 +1510,30 @@ function reorderPlaceholderAt(x, y) {
 async function finishAppleBooksReorder(commit) {
   const drag = A.draggingBookEl;
   const ph = A.dragPlaceholder;
+  const moved = !!A.dragMoved;
   cancelLibraryHold();
+  stopLibraryAutoScroll();
   if (!drag) return;
 
-  const targetRect = ph ? ph.getBoundingClientRect() : null;
-  if (commit && ph && ph.parentNode) ph.parentNode.insertBefore(drag, ph);
+  if (commit && !moved) {
+    commit = false;
+    setTimeout(() => toggleBookSelection(drag.dataset.id), 40);
+  }
+
+  if (commit && ph && ph.parentNode) {
+    const grid = ph.parentNode;
+    const selected = A.selectionMode && A.selectedBookIds?.size > 1 && A.selectedBookIds.has(drag.dataset.id);
+    if (selected) {
+      const selectedIds = new Set(A.selectedBookIds);
+      const group = [...grid.querySelectorAll('.bcard')].filter(el => selectedIds.has(el.dataset.id));
+      group.forEach(el => grid.insertBefore(el, ph));
+    } else {
+      ph.parentNode.insertBefore(drag, ph);
+    }
+  }
   if (ph?.parentNode) ph.parentNode.removeChild(ph);
 
+  drag.querySelector('.multi-count-badge')?.remove();
   drag.classList.remove('dragging');
   drag.classList.add('drop-anim');
   drag.style.width = '';
@@ -1457,7 +1549,15 @@ async function finishAppleBooksReorder(commit) {
   A.dragPlaceholder = null;
   setTimeout(() => drag.classList.remove('drop-anim'), 220);
 
-  if (commit) await updateBookOrderFromDom();
+  if (commit) {
+    await updateBookOrderFromDom();
+    if (A.selectionMode && A.selectedBookIds?.size > 1) {
+      A.selectedBookIds.clear();
+      A.selectionMode = false;
+      setTimeout(renderLib, 40);
+    }
+  }
+  A.dragMoved = false;
   A.longPressed = true;
   setTimeout(() => { A.longPressed = false; }, 300);
 }
@@ -1553,7 +1653,7 @@ const backupFi = document.getElementById('backupFi');
 
 function openLibraryTools() { openAppSheet('libraryToolsSheet'); }
 document.getElementById('addbtn').addEventListener('click', openLibraryTools);
-document.getElementById('emptadd').addEventListener('click', () => fi.click());
+document.getElementById('emptadd').addEventListener('click', openNativeEpubImport);
 
 function wireToolButton(id, fn) {
   const el = document.getElementById(id);
@@ -1567,12 +1667,32 @@ wireToolButton('folderRescanBtn', rescanFolder);
 document.querySelectorAll('[data-libtool]').forEach(b => b.addEventListener('click', () => {
   closeAppSheet('libraryToolsSheet');
   const act = b.dataset.libtool;
-  if (act === 'import') fi.click();
+  if (act === 'import') openNativeEpubImport();
   if (act === 'folder') rescanFolder();
   if (act === 'protect') requestPersistentStorage(true);
   if (act === 'backup') exportBackup();
   if (act === 'restore') backupFi.click();
 }));
+
+async function openNativeEpubImport() {
+  try {
+    if ('showOpenFilePicker' in window) {
+      const handles = await window.showOpenFilePicker({
+        multiple: true,
+        excludeAcceptAllOption: false,
+        types: [{ description: 'EPUB books', accept: { 'application/epub+zip': ['.epub'] } }]
+      });
+      const files = await Promise.all(handles.map(h => h.getFile()));
+      await batchImportFiles(files, { source: 'native-file-picker' });
+      return;
+    }
+  } catch(e) {
+    if (e?.name === 'AbortError') return;
+    console.error('Native file picker failed:', e);
+  }
+  toast('Select one or more EPUB files', 2200);
+  fi.click();
+}
 
 fi.addEventListener('change', async e => {
   const files = Array.from(e.target.files || []).filter(f => /\.epub$/i.test(f.name));
