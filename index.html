@@ -425,6 +425,77 @@ input[type=file]{display:none}
 
 
 #reader .rbot{display:none!important}
+
+/* Reader fix 3: gutters, progress, page animation */
+html.standalone body, html.standalone #app{background:var(--read-bg,#050505)!important}
+#reader{
+  left:0!important;right:0!important;width:100vw!important;max-width:none!important;
+  overflow:hidden!important;
+}
+#reader.dark{background:#050505!important}
+#reader.light{background:#FBF8F2!important}
+#reader.sepia{background:#F2E8D5!important}
+#reader.dark .rbody,#reader.dark #viewer,#reader.dark .reader-status-bottom{background:#050505!important}
+#reader.light .rbody,#reader.light #viewer,#reader.light .reader-status-bottom{background:#FBF8F2!important}
+#reader.sepia .rbody,#reader.sepia #viewer,#reader.sepia .reader-status-bottom{background:#F2E8D5!important}
+#viewer{
+  inset:0!important;
+  bottom:76px!important;
+  width:100vw!important;
+  max-width:none!important;
+  overflow:hidden!important;
+}
+#viewer iframe{
+  width:100vw!important;
+  max-width:none!important;
+  border:0!important;
+  margin:0!important;
+  padding:0!important;
+  background:inherit!important;
+}
+.reader-status-bottom{
+  flex-direction:column;
+  gap:6px;
+  height:58px!important;
+  font-size:16px;
+  line-height:1.15;
+}
+.reader-progress{
+  width:min(72vw,310px);
+  height:6px;
+  border-radius:999px;
+  background:#8E8E93;
+  overflow:hidden;
+  opacity:0;
+  transform:translateY(3px);
+  transition:opacity .18s ease, transform .18s ease;
+}
+.reader-progress-fill{
+  height:100%;
+  width:0%;
+  border-radius:999px;
+  background:#007AFF;
+  transition:width .25s ease;
+}
+#reader.chrome .reader-progress{
+  opacity:1;
+  transform:translateY(0);
+}
+#reader.turning-next #viewer{
+  animation:folioSlideNext .22s ease both;
+}
+#reader.turning-prev #viewer{
+  animation:folioSlidePrev .22s ease both;
+}
+@keyframes folioSlideNext{
+  0%{opacity:.55;transform:translateX(18px)}
+  100%{opacity:1;transform:translateX(0)}
+}
+@keyframes folioSlidePrev{
+  0%{opacity:.55;transform:translateX(-18px)}
+  100%{opacity:1;transform:translateX(0)}
+}
+
 </style>
 </head>
 <body>
@@ -508,7 +579,7 @@ input[type=file]{display:none}
     </div>
     <div class="rbody">
       <div class="reader-status-top" id="sectionLeft"></div>
-      <div class="reader-status-bottom" id="pageStatus">Page 1</div>
+      <div class="reader-status-bottom"><div id="pageStatus">Page 1</div><div class="reader-progress" id="readerProgress"><div class="reader-progress-fill" id="readerProgressFill"></div></div></div>
       <div id="viewer"></div>
       <div class="tzone" id="tprev"></div>
       <div class="tzone" id="tmenu"></div>
@@ -961,7 +1032,11 @@ function updateReaderThemeClass() {
   if (!r) return;
   r.classList.remove('light','dark','sepia');
   r.classList.add(A.readerSettings.theme || 'light');
+  const bg = (A.readerSettings.theme === 'dark') ? '#050505' : (A.readerSettings.theme === 'sepia' ? '#F2E8D5' : '#FBF8F2');
+  document.documentElement.style.setProperty('--read-bg', bg);
+  document.body.style.background = bg;
 }
+
 function applyReaderSettings() {
   updateReaderThemeClass();
   const pct = A.readerSettings.fontSize || 100;
@@ -981,7 +1056,8 @@ function applyReaderSettings() {
   try {
     A.rend.themes.register('folioDynamic', {
       'html': { 'background': `${p.bg} !important` },
-      'body': { 'background': `${p.bg} !important`, 'color': `${p.fg} !important`, 'padding-left':'0 !important', 'padding-right':'0 !important' },
+      'body': { 'background': `${p.bg} !important`, 'color': `${p.fg} !important`, 'margin':'0 !important', 'padding-left':'0 !important', 'padding-right':'0 !important' },
+      '@page': { 'margin':'0' },
       'p, div, span, section, article, li, blockquote': { 'color': `${p.fg} !important` },
       'h1, h2, h3, h4, h5, h6': { 'color': `${p.fg} !important` },
       'a': { 'color': `${p.link} !important` },
@@ -993,6 +1069,9 @@ function applyReaderSettings() {
       try {
         const doc = v.document;
         doc.documentElement.style.background = p.bg;
+        doc.documentElement.style.margin = '0';
+        doc.documentElement.style.padding = '0';
+        doc.body.style.margin = '0';
         doc.body.style.background = p.bg;
         doc.body.style.color = p.fg;
       } catch(_) {}
@@ -1002,6 +1081,7 @@ function applyReaderSettings() {
 function showChrome(auto=true) {
   const r = document.getElementById('reader');
   if (!r?.classList.contains('active')) return;
+  forceRefreshLocationStatus();
   r.classList.add('chrome');
   updatePageStatus(true);
   clearTimeout(A.chromeHideTmr);
@@ -1012,6 +1092,52 @@ function hideChrome() {
   closeReaderMenu();
   document.getElementById('reader')?.classList.remove('chrome');
   updatePageStatus(false);
+}
+
+
+async function animatedPageTurn(direction) {
+  if (!A.rend) return;
+  const r = document.getElementById('reader');
+  closeReaderMenu();
+  hideChrome();
+  if (A.readerSettings.animation) {
+    r?.classList.remove('turning-next','turning-prev');
+    void r?.offsetWidth;
+    r?.classList.add(direction === 'prev' ? 'turning-prev' : 'turning-next');
+  }
+  try {
+    if (direction === 'prev') await A.rend.prev();
+    else await A.rend.next();
+  } finally {
+    setTimeout(() => {
+      r?.classList.remove('turning-next','turning-prev');
+      forceRefreshLocationStatus();
+    }, 260);
+  }
+}
+function forceRefreshLocationStatus() {
+  try {
+    if (!A.rend || !A.epubBook) return;
+    const loc = A.rend.currentLocation();
+    if (!loc) return;
+    const start = Array.isArray(loc) ? loc[0]?.start : loc.start;
+    if (!start) return;
+    const pct = start.percentage || A.currentPct || 0;
+    A.currentPct = pct;
+
+    let page = 1, total = 0;
+    try {
+      page = A.epubBook.locations.locationFromCfi(start.cfi) || 1;
+      total = A.epubBook.locations.total || A.epubBook.locations.length?.() || 0;
+    } catch(_) {}
+    if (!page || page < 1) page = Math.max(1, Math.round(pct * (total || 1)));
+    A.currentPage = page;
+    A.totalPages = total || A.totalPages;
+
+    const left = Math.max(0, (start.displayed?.total || 0) - (start.displayed?.page || 0));
+    A.chapterLeft = left ? `${left} page${left === 1 ? '' : 's'} left in chapter` : '';
+    updatePageStatus();
+  } catch(e) { console.error(e); }
 }
 
 function closeReaderMenu() {
@@ -1034,12 +1160,14 @@ function updatePageStatus(showDetails = document.getElementById('reader')?.class
   const bottom = document.getElementById('pageStatus');
   const top = document.getElementById('sectionLeft');
   const menuPct = document.getElementById('menuPct');
+  const fill = document.getElementById('readerProgressFill');
 
   if (bottom) {
     bottom.textContent = showDetails && total
       ? `Page ${cur} of ${total} · ${pct}%`
       : `Page ${cur}`;
   }
+  if (fill) fill.style.width = `${Math.max(0, Math.min(100, pct))}%`;
   if (top) top.textContent = showDetails ? (A.chapterLeft || '') : '';
   if (menuPct) menuPct.textContent = `${pct}%`;
 }
@@ -1086,6 +1214,8 @@ function renderToc() {
         closeSheet('tocSheet');
         hideChrome();
         await A.rend.display(item.href);
+        setTimeout(forceRefreshLocationStatus, 250);
+        setTimeout(forceRefreshLocationStatus, 700);
       }
     });
   });
@@ -1104,13 +1234,13 @@ function wireReaderControlsOnce() {
     e.stopPropagation();
     closeReaderMenu();
     hideChrome();
-    A.rend?.prev();
+    animatedPageTurn('prev');
   });
   document.getElementById('tnext')?.addEventListener('click', e => {
     e.stopPropagation();
     closeReaderMenu();
     hideChrome();
-    A.rend?.next();
+    animatedPageTurn('next');
   });
   document.getElementById('menuFab')?.addEventListener('touchstart', e => { e.stopPropagation(); }, {passive:true});
   document.getElementById('menuFab')?.addEventListener('click', e => {
@@ -1284,8 +1414,8 @@ function teardown() {
   document.getElementById('viewer').innerHTML='';
 }
 
-document.getElementById('ppg').addEventListener('click',   ()=>{ hideChrome(); A.rend?.prev(); });
-document.getElementById('npg').addEventListener('click',   ()=>{ hideChrome(); A.rend?.next(); });
+document.getElementById('ppg').addEventListener('click',   ()=>{ hideChrome(); animatedPageTurn('prev'); });
+document.getElementById('npg').addEventListener('click',   ()=>{ hideChrome(); animatedPageTurn('next'); });
 document.getElementById('rback').addEventListener('click', ()=>closeReader(true));
 
 function closeReader(save=true) {
