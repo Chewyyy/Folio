@@ -394,6 +394,37 @@ input[type=file]{display:none}
 #reader.chrome .rbot{display:none}
 #reader.chrome .rtop{border-radius:24px}
 
+
+/* Tap/menu/page-status fix */
+.rbody{padding-bottom:54px!important}
+#viewer{bottom:54px!important}
+.tzone{z-index:10!important}
+.menu-fab{z-index:120!important;pointer-events:auto!important}
+.reader-menu{z-index:130!important}
+.reader-menu.open{pointer-events:auto!important}
+.reader-status-bottom{
+  z-index:44!important;
+  bottom:calc(14px + env(safe-area-inset-bottom,0px))!important;
+  height:34px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--read-bg);
+  font-size:16px;
+  font-weight:800;
+}
+#reader.chrome .reader-status-bottom{
+  bottom:calc(14px + env(safe-area-inset-bottom,0px))!important;
+}
+.reader-status-top{
+  z-index:44!important;
+}
+#reader.chrome .menu-fab{
+  pointer-events:auto!important;
+}
+
+
+#reader .rbot{display:none!important}
 </style>
 </head>
 <body>
@@ -1064,6 +1095,7 @@ function wireReaderControlsOnce() {
   window.__folioReaderControlsWired = true;
 
   document.getElementById('tmenu')?.addEventListener('click', e => {
+    if (e.target.closest?.('#menuFab, #readerMenu, .sheet-backdrop')) return;
     e.stopPropagation();
     closeReaderMenu();
     toggleChrome();
@@ -1080,6 +1112,14 @@ function wireReaderControlsOnce() {
     hideChrome();
     A.rend?.next();
   });
+  document.getElementById('menuFab')?.addEventListener('touchstart', e => { e.stopPropagation(); }, {passive:true});
+  document.getElementById('menuFab')?.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleReaderMenu();
+  });
+  document.getElementById('readerMenu')?.addEventListener('touchstart', e => { e.stopPropagation(); }, {passive:true});
+  document.getElementById('readerMenu')?.addEventListener('click', e => { e.stopPropagation(); });
   document.getElementById('contentsBtn')?.addEventListener('click', () => { renderToc(); openSheet('tocSheet'); });
   document.getElementById('settingsBtn')?.addEventListener('click', () => { applyReaderSettings(); openSheet('settingsSheet'); });
   document.getElementById('searchBtn')?.addEventListener('click', () => toast('Search is not built yet'));
@@ -1151,7 +1191,7 @@ async function mountEpub(buf, bkMeta) {
   teardown();
   const viewer = document.getElementById('viewer');
   await new Promise(r => requestAnimationFrame(r));
-  const h = viewer.clientHeight || (window.innerHeight-120);
+  const h = viewer.clientHeight || (window.innerHeight-174);
 
   try {
     const epubBk = makeEpubBook(buf.slice(0));
@@ -1355,6 +1395,7 @@ window.addEventListener('resize', ()=>{
   const v = document.getElementById('viewer');
   A.rend.resize(v.clientWidth, v.clientHeight);
   applyReaderSettings();
+  setTimeout(()=>updatePageStatus(document.getElementById('reader')?.classList.contains('chrome')), 150);
 });
 
 (async ()=>{
