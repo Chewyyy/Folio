@@ -9,7 +9,10 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#F6F3ED">
 <title>Folio</title>
-<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Folio%22%2C%22short_name%22%3A%22Folio%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22#F6F3ED%22%2C%22theme_color%22%3A%22#F6F3ED%22%7D">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" onload="window.__jszipLoaded=true" onerror="window.__jszipError=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.legacy.min.js" onload="window.__epubLoaded=true" onerror="window.__epubError=true"></script>
 <style>
@@ -522,7 +525,7 @@ body.reader-open{background:var(--read-bg)!important}
         <div class="scard"><span class="v" id="mstreak">0</span><span class="l">Day Streak</span></div>
       </div>
       <div class="sec" id="sectitle">Your Library</div>
-      <div class="reorderbar" id="reorderBar"><span>Press and hold a book, then drag it.</span><button id="reorderDone" type="button">Done</button></div>
+      <div class="reorderbar" id="reorderBar" aria-hidden="true" style="display:none"></div>
       <div class="bgrid" id="bgrid"></div>
       <div class="empty" id="empt" style="display:none">
         <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -769,7 +772,6 @@ body.reader-open{background:var(--read-bg)!important}
       <div class="as-group">
         <button class="as-btn" data-libtool="import"><span class="aico">📚</span>Import EPUB Files</button>
         <button class="as-btn" data-libtool="folder"><span class="aico">📁</span>Rescan Folder</button>
-        <button class="as-btn" data-libtool="reorder"><span class="aico">↕️</span>Reorder Library</button>
         <button class="as-btn" data-libtool="protect"><span class="aico">🔒</span>Protect Database</button>
         <button class="as-btn" data-libtool="backup"><span class="aico">⬇️</span>Export Backup</button>
         <button class="as-btn" data-libtool="restore"><span class="aico">⬆️</span>Restore Backup</button>
@@ -875,7 +877,7 @@ body.reader-open{background:var(--read-bg)!important}
 </div>
 
 <script>
-const FOLIO_VERSION = 'v17-apple-reorder';
+const FOLIO_VERSION = 'v19-restore-drag-icons';
 const CHARS_PER_PAGE = 1800;   // ≈ Apple Books / print pagination density
 
 function dbg(msg) {}
@@ -1228,8 +1230,8 @@ function renderLib() {
     return;
   }
   empt.style.display='none'; sec.style.display='block';
-  if (rbar) rbar.classList.toggle('on', !!A.reorderMode);
-  grid.classList.toggle('reorder', !!A.reorderMode);
+  if (rbar) rbar.classList.remove('on');
+  grid.classList.remove('reorder');
 
   const sorted = [...A.books].sort((a,b)=>
     (Number(a.order)||0) - (Number(b.order)||0) ||
@@ -1252,7 +1254,7 @@ function renderLib() {
         <div class="btitle">${esc(bk.title)}</div>
         <div class="bauth">${esc(bk.author)}</div>
         <div class="pt"><div class="pf" style="width:${pct}%"></div></div>
-        <div class="pl">${A.reorderMode ? 'Hold and drag' : stat}</div>
+        <div class="pl">${stat}</div>
       </div>
     </div>`;
   }).join('');
@@ -1262,7 +1264,6 @@ function renderLib() {
     el.addEventListener('dragstart', e => e.preventDefault());
     wireAppleBooksReorderCard(el);
     el.addEventListener('click', e => {
-      if (A.reorderMode) return;
       if (e.target.closest('.morebtn')) return;
       if (A.longPressed) { A.longPressed = false; return; }
       openReader(el.dataset.id);
@@ -1270,13 +1271,14 @@ function renderLib() {
     el.addEventListener('contextmenu', e => e.preventDefault());
   });
   grid.querySelectorAll('.morebtn').forEach(b =>
-    b.addEventListener('click', e => { e.stopPropagation(); if (!A.reorderMode) openBookSheet(b.dataset.id); }));
+    b.addEventListener('click', e => { e.stopPropagation(); openBookSheet(b.dataset.id); }));
 }
 
 function setReorderMode(on) {
-  A.reorderMode = !!on;
+  // Reordering is always available now: press and hold any book, then drag.
+  A.reorderMode = false;
   renderLib();
-  toast(A.reorderMode ? 'Press and hold a book, then drag it' : 'Library order saved');
+  toast('Press and hold any book, then drag it');
 }
 
 function updateBookOrderFromDom() {
@@ -1311,15 +1313,15 @@ function wireAppleBooksReorderCard(el) {
 
     const moveBeforeDrag = ev => {
       if (ev.pointerId !== pointerId) return;
-      if (Math.abs(ev.clientX - startX) > 9 || Math.abs(ev.clientY - startY) > 9) cleanup(true);
+      if (Math.abs(ev.clientX - startX) > 9 || Math.abs(ev.clientY - startY) > 9) cleanup(false);
     };
     const upBeforeDrag = ev => {
       if (ev.pointerId !== pointerId) return;
-      cleanup(true);
+      cleanup(false);
     };
     const cancelBeforeDrag = ev => {
       if (ev.pointerId !== pointerId) return;
-      cleanup(true);
+      cleanup(false);
     };
     const cleanup = removeHold => {
       clearTimeout(A.longPressTmr);
@@ -1338,7 +1340,7 @@ function wireAppleBooksReorderCard(el) {
       active = true;
       cleanup(false);
       beginAppleBooksReorder(el, e, startX, startY, pointerId);
-    }, A.reorderMode ? 220 : 360);
+    }, 320);
 
     setTimeout(() => {
       if (!active && A.longPressTmr) el.classList.add('reorder-hold');
@@ -1381,23 +1383,22 @@ function beginAppleBooksReorder(el, startEvent, startX, startY, pointerId) {
     if (ev.pointerId !== pointerId) return;
     ev.preventDefault();
     moveLiftedBook(ev.clientX, ev.clientY);
-    autoScrollLibraryDuringDrag(ev.clientY);
     reorderPlaceholderAt(ev.clientX, ev.clientY);
   };
   const onEnd = ev => {
     if (ev.pointerId !== pointerId) return;
     ev.preventDefault();
     finishAppleBooksReorder(true);
-    document.removeEventListener('pointermove', onMove, true);
-    document.removeEventListener('pointerup', onEnd, true);
-    document.removeEventListener('pointercancel', onCancel, true);
+    document.removeEventListener('pointermove', onMove, { capture:true });
+    document.removeEventListener('pointerup', onEnd, { capture:true });
+    document.removeEventListener('pointercancel', onCancel, { capture:true });
   };
   const onCancel = ev => {
     if (ev.pointerId !== pointerId) return;
     finishAppleBooksReorder(false);
-    document.removeEventListener('pointermove', onMove, true);
-    document.removeEventListener('pointerup', onEnd, true);
-    document.removeEventListener('pointercancel', onCancel, true);
+    document.removeEventListener('pointermove', onMove, { capture:true });
+    document.removeEventListener('pointerup', onEnd, { capture:true });
+    document.removeEventListener('pointercancel', onCancel, { capture:true });
   };
 
   document.addEventListener('pointermove', onMove, { capture:true, passive:false });
@@ -1410,18 +1411,6 @@ function moveLiftedBook(x, y) {
   if (!el) return;
   el.style.left = `${x - (A.dragOffsetX || 0)}px`;
   el.style.top = `${y - (A.dragOffsetY || 0)}px`;
-}
-
-
-function autoScrollLibraryDuringDrag(y) {
-  const scroller = document.querySelector('#lib .sa');
-  if (!scroller) return;
-  const r = scroller.getBoundingClientRect();
-  const edge = 74;
-  let delta = 0;
-  if (y < r.top + edge) delta = -Math.ceil((r.top + edge - y) / 5);
-  if (y > r.bottom - edge) delta = Math.ceil((y - (r.bottom - edge)) / 5);
-  if (delta) scroller.scrollBy(0, delta);
 }
 
 function reorderPlaceholderAt(x, y) {
@@ -1580,7 +1569,6 @@ document.querySelectorAll('[data-libtool]').forEach(b => b.addEventListener('cli
   const act = b.dataset.libtool;
   if (act === 'import') fi.click();
   if (act === 'folder') rescanFolder();
-  if (act === 'reorder') setReorderMode(true);
   if (act === 'protect') requestPersistentStorage(true);
   if (act === 'backup') exportBackup();
   if (act === 'restore') backupFi.click();
@@ -1589,10 +1577,22 @@ document.querySelectorAll('[data-libtool]').forEach(b => b.addEventListener('cli
 fi.addEventListener('change', async e => {
   const files = Array.from(e.target.files || []).filter(f => /\.epub$/i.test(f.name));
   const reopen = fi.dataset.reopen; fi.removeAttribute('data-reopen');
-  if (!files.length) return;
-  const ids = await batchImportFiles(files);
+  if (!files.length) { fi.value=''; return; }
+
+  if (reopen) {
+    const bk = A.books.find(b => b.id === reopen);
+    toast(`Relinking ${bk?.title || 'book'}…`, 6000);
+    const id = await ingest(files[0], reopen, { source: 'manual-relink' });
+    fi.value='';
+    if (id) {
+      toast('Book file relinked');
+      setTimeout(() => openReader(reopen), 80);
+    }
+    return;
+  }
+
+  await batchImportFiles(files);
   fi.value='';
-  if (reopen && ids[0]) openReader(ids[0]);
 });
 
 folderFi.addEventListener('change', async e => {
@@ -2634,10 +2634,13 @@ async function openReader(bookId) {
 
   const stored = await getEpub(bookId);
   if (!stored) {
-    document.getElementById('rload').style.display = 'none';
-    const ok = confirm(`"${bk.title}" needs to be re-uploaded once to read. Select the file?`);
-    if (ok) { fi.dataset.reopen = bookId; fi.click(); }
-    else closeReader(false);
+    closeReader(false);
+    await new Promise(r => requestAnimationFrame(r));
+    const ok = confirm(`"${bk.title}" needs to be re-uploaded once to read. Select the EPUB file?`);
+    if (ok) {
+      fi.dataset.reopen = bookId;
+      fi.click();
+    }
     return;
   }
   const buf = typeof stored === 'string' ? b642ab(stored) : stored;
