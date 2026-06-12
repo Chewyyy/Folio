@@ -171,6 +171,16 @@ html,body{height:100%;background:#C8C3BC;
 input[type=file]{display:none}
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+#debugPanel{
+  position:absolute;left:10px;right:10px;bottom:72px;z-index:9999;
+  background:rgba(0,0,0,.86);color:#fff;border-radius:12px;
+  padding:10px 12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:11px;line-height:1.45;max-height:180px;overflow:auto;display:none;
+}
+#debugPanel.on{display:block}
+#debugPanel b{color:#9ff}
+
 </style>
 </head>
 <body>
@@ -287,14 +297,29 @@ input[type=file]{display:none}
     </button>
   </nav>
 
+  <div id="debugPanel"></div>
   <div class="toast" id="toast"></div>
 </div>
 
 <script>
 
+function dbg(msg) {
+  const el = document.getElementById('debugPanel');
+  if (!el) return;
+  el.classList.add('on');
+  const line = document.createElement('div');
+  line.innerHTML = '<b>' + new Date().toLocaleTimeString() + '</b> ' + String(msg)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
 window.addEventListener('error', e => {
-  try { toast('App error: ' + (e.message || 'unknown error'), 5000); } catch(_) {}
+  dbg('ERROR: ' + (e.message || 'unknown') + ' @ ' + (e.filename || '') + ':' + (e.lineno || ''));
 });
+window.addEventListener('unhandledrejection', e => {
+  dbg('PROMISE ERROR: ' + ((e.reason && (e.reason.message || e.reason.name)) || e.reason || 'unknown'));
+});
+
 
 function getEpubFactory() {
   return window.ePub || window.EPUB || window.epub || null;
@@ -559,7 +584,8 @@ document.getElementById('addbtn').addEventListener('click', ()=>fi.click());
 document.getElementById('emptadd').addEventListener('click', ()=>fi.click());
 
 fi.addEventListener('change', async e => {
-  const file = e.target.files[0]; if (!file) return;
+  const file = e.target.files[0]; if (!file) { dbg('No file selected'); return; }
+  dbg('Selected file: ' + file.name + ' · ' + Math.round(file.size/1024/1024*10)/10 + ' MB');
   e.target.value='';
   const reopen = fi.dataset.reopen; fi.removeAttribute('data-reopen');
   const id = await ingest(file, reopen||null);
@@ -567,6 +593,8 @@ fi.addEventListener('change', async e => {
 });
 
 async function ingest(file, existId=null) {
+  dbg('Starting ingest');
+  dbg('Globals: JSZip=' + typeof window.JSZip + ', ePub=' + typeof window.ePub + ', EPUB=' + typeof window.EPUB + ', epub=' + typeof window.epub);
   if (!getEpubFactory()) {
     toast('Library not loaded yet — please wait a moment', 3500); return null;
   }
@@ -577,8 +605,11 @@ async function ingest(file, existId=null) {
       const buf = evt.target.result;
       try {
         const bk = makeEpubBook(buf.slice(0));
+        dbg('EPUB object created');
         await bk.ready;
+        dbg('EPUB ready');
         const meta   = await bk.loaded.metadata;
+        dbg('Metadata loaded: ' + (meta.title || file.name));
         const title  = meta.title  || file.name.replace(/\.epub$/i,'');
         const author = meta.creator || 'Unknown Author';
         let cover = null;
@@ -594,14 +625,19 @@ async function ingest(file, existId=null) {
         A.books = A.books.filter(b=>b.id!==id);
         A.books.push(entry);
 
+        dbg('Saving EPUB to IndexedDB...');
         const ok = await storeEpub(id, buf);
+        dbg('IndexedDB save result: ' + ok);
         if (!ok) toast('Could not save EPUB. Try clearing Safari website data and re-uploading.', 5000);
 
+        dbg('Saving metadata...');
         await persist(); renderLib();
+        dbg('Library rendered');
         toast(`"${title}" added!`);
         res(id);
       } catch(err) {
         console.error(err);
+        dbg('Ingest failed: ' + (err && (err.message || err.name) || err));
         toast('Could not read this EPUB file');
         res(null);
       }
@@ -611,7 +647,8 @@ async function ingest(file, existId=null) {
 }
 
 async function openReader(bookId) {
-  const bk = A.books.find(b=>b.id===bookId); if (!bk) return;
+  dbg('Opening reader for bookId: ' + bookId);
+  const bk = A.books.find(b=>b.id===bookId); if (!bk) { dbg('Book not found in metadata'); return; }
   A.bookId = bookId;
 
   document.getElementById('rtitle').textContent  = bk.title;
@@ -622,7 +659,9 @@ async function openReader(bookId) {
   document.getElementById('reader').classList.add('active');
   document.getElementById('bnav').style.display  = 'none';
 
+  dbg('Loading EPUB from IndexedDB...');
   const stored = await getEpub(bookId);
+  dbg('Stored EPUB found: ' + !!stored + (stored && stored.byteLength ? ' · ' + Math.round(stored.byteLength/1024/1024*10)/10 + ' MB' : ''));
   if (!stored) {
     document.getElementById('rload').style.display = 'none';
     const ok = confirm(`"${bk.title}" needs to be re-uploaded once to read. Select the file?`);
@@ -635,6 +674,7 @@ async function openReader(bookId) {
 }
 
 async function mountEpub(buf, bkMeta) {
+  dbg('Mounting EPUB...');
   teardown();
   const viewer = document.getElementById('viewer');
   await new Promise(r => requestAnimationFrame(r));
@@ -644,6 +684,7 @@ async function mountEpub(buf, bkMeta) {
     const epubBk = makeEpubBook(buf.slice(0));
     A.epubBook = epubBk;
     await epubBk.ready;
+    dbg('Reader EPUB ready');
 
     const rend = epubBk.renderTo(viewer, {
       width:'100%', height:h, spread:'none', flow:'paginated'
@@ -654,6 +695,7 @@ async function mountEpub(buf, bkMeta) {
 
     const saved = A.progress[bkMeta.id]?.cfi;
     await rend.display(saved||undefined);
+    dbg('Rendered first location');
 
     document.getElementById('rload').style.display = 'none';
 
@@ -684,6 +726,7 @@ async function mountEpub(buf, bkMeta) {
 
   } catch(err) {
     console.error('Render error:', err);
+    dbg('Render failed: ' + (err && (err.message || err.name) || err));
     document.getElementById('rload').style.display = 'none';
     viewer.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;
       justify-content:center;height:100%;gap:16px;padding:32px;text-align:center;color:#6B7280">
