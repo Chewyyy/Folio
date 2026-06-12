@@ -291,8 +291,21 @@ input[type=file]{display:none}
 </div>
 
 <script>
-// Browser fallback for environments that do not inject window.storage.
-// This makes the app testable in Safari/Chrome using localStorage.
+
+window.addEventListener('error', e => {
+  try { toast('App error: ' + (e.message || 'unknown error'), 5000); } catch(_) {}
+});
+
+function getEpubFactory() {
+  return window.ePub || window.EPUB || window.epub || null;
+}
+function makeEpubBook(input) {
+  const factory = getEpubFactory();
+  if (!factory) throw new Error('EPUB.js is not loaded');
+  return factory(input);
+}
+
+// Browser fallback for metadata in Safari/Chrome.
 if (!window.storage) {
   window.storage = {
     async get(key) {
@@ -308,6 +321,46 @@ if (!window.storage) {
       return true;
     }
   };
+}
+
+// IndexedDB is used for full EPUB files because localStorage is too small.
+function openFolioDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('folio_epub_db', 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains('epubs')) db.createObjectStore('epubs');
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error || new Error('Could not open IndexedDB'));
+  });
+}
+async function idbSet(key, value) {
+  const db = await openFolioDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('epubs', 'readwrite');
+    tx.objectStore('epubs').put(value, key);
+    tx.oncomplete = () => { db.close(); resolve(true); };
+    tx.onerror = () => { db.close(); reject(tx.error || new Error('IndexedDB write failed')); };
+  });
+}
+async function idbGet(key) {
+  const db = await openFolioDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('epubs', 'readonly');
+    const req = tx.objectStore('epubs').get(key);
+    req.onsuccess = () => { db.close(); resolve(req.result || null); };
+    req.onerror = () => { db.close(); reject(req.error || new Error('IndexedDB read failed')); };
+  });
+}
+async function idbDelete(key) {
+  const db = await openFolioDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('epubs', 'readwrite');
+    tx.objectStore('epubs').delete(key);
+    tx.oncomplete = () => { db.close(); resolve(true); };
+    tx.onerror = () => { db.close(); reject(tx.error || new Error('IndexedDB delete failed')); };
+  });
 }
 
 const A = {
@@ -343,9 +396,9 @@ async function hydrate() {
   A.progress = await get('f_progress', {});
 }
 
-async function storeEpub(id, b64) {
+async function storeEpub(id, buf) {
   try {
-    await idbSet(`f_epub_${id}`, b64);
+    await idbSet(`f_epub_${id}`, buf);
     return true;
   } catch(e) {
     console.error('EPUB IndexedDB store failed:', e);
@@ -354,11 +407,10 @@ async function storeEpub(id, b64) {
 }
 async function getEpub(id) {
   try {
-    // First try IndexedDB, which is used by the mobile/browser version.
     const v = await idbGet(`f_epub_${id}`);
     if (v) return v;
 
-    // Fallback for older saves that used localStorage/window.storage.
+    // Fallback for old localStorage/base64 saves.
     if (window.storage) {
       const r = await window.storage.get(`f_epub_${id}`);
       return r ? r.value : null;
@@ -542,8 +594,8 @@ async function ingest(file, existId=null) {
         A.books = A.books.filter(b=>b.id!==id);
         A.books.push(entry);
 
-        const ok = await storeEpub(id, ab2b64(buf));
-        if (!ok) toast('Could not cache EPUB. Try a smaller file or clear Safari website data.', 5000);
+        const ok = await storeEpub(id, buf);
+        if (!ok) toast('Could not save EPUB. Try clearing Safari website data and re-uploading.', 5000);
 
         await persist(); renderLib();
         toast(`"${title}" added!`);
@@ -570,15 +622,16 @@ async function openReader(bookId) {
   document.getElementById('reader').classList.add('active');
   document.getElementById('bnav').style.display  = 'none';
 
-  const b64 = await getEpub(bookId);
-  if (!b64) {
+  const stored = await getEpub(bookId);
+  if (!stored) {
     document.getElementById('rload').style.display = 'none';
-    const ok = confirm(`"${bk.title}" was saved before EPUB storage was fixed. Re-upload it once to read. Select the file?`);
+    const ok = confirm(`"${bk.title}" needs to be re-uploaded once to read. Select the file?`);
     if (ok) { fi.dataset.reopen = bookId; fi.click(); }
     else closeReader(false);
     return;
   }
-  await mountEpub(b642ab(b64), bk);
+  const buf = typeof stored === 'string' ? b642ab(stored) : stored;
+  await mountEpub(buf, bk);
 }
 
 async function mountEpub(buf, bkMeta) {
