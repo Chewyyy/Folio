@@ -3,7 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Folio">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#F6F3ED">
 <title>Folio</title>
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Folio%22%2C%22short_name%22%3A%22Folio%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22#F6F3ED%22%2C%22theme_color%22%3A%22#F6F3ED%22%7D">
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" onload="window.__jszipLoaded=true" onerror="window.__jszipError=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.legacy.min.js" onload="window.__epubLoaded=true" onerror="window.__epubError=true"></script>
 <style>
@@ -22,10 +28,10 @@
   --rsm:      10px;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:#C8C3BC;
+html,body{height:100%;height:100dvh;background:#C8C3BC;
   font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',sans-serif;
   color:var(--text)}
-#app{max-width:430px;height:100vh;margin:0 auto;background:var(--bg);
+#app{max-width:430px;height:100vh;height:100dvh;margin:0 auto;background:var(--bg);
   display:flex;flex-direction:column;position:relative;overflow:hidden;
   box-shadow:0 0 80px rgba(0,0,0,0.25)}
 
@@ -99,7 +105,7 @@ html,body{height:100%;background:#C8C3BC;
   display:none;flex-direction:column}
 #reader.active{display:flex}
 
-.rtop{display:flex;align-items:center;gap:10px;padding:10px 14px;
+.rtop{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;
   background:rgba(251,248,242,.96);border-bottom:1px solid var(--border);
   backdrop-filter:blur(8px)}
 .rtitle{flex:1;font-size:13px;font-weight:600;text-align:center;
@@ -172,14 +178,12 @@ input[type=file]{display:none}
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 
-#debugPanel{
-  position:absolute;left:10px;right:10px;bottom:72px;z-index:9999;
-  background:rgba(0,0,0,.86);color:#fff;border-radius:12px;
-  padding:10px 12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-  font-size:11px;line-height:1.45;max-height:180px;overflow:auto;display:none;
+
+
+@media (display-mode: standalone) {
+  #app{max-width:none;width:100vw;height:100vh;height:100dvh;box-shadow:none}
+  body{background:var(--bg)}
 }
-#debugPanel.on{display:block}
-#debugPanel b{color:#9ff}
 
 </style>
 </head>
@@ -297,28 +301,12 @@ input[type=file]{display:none}
     </button>
   </nav>
 
-  <div id="debugPanel"></div>
   <div class="toast" id="toast"></div>
 </div>
 
 <script>
 
-function dbg(msg) {
-  const el = document.getElementById('debugPanel');
-  if (!el) return;
-  el.classList.add('on');
-  const line = document.createElement('div');
-  line.innerHTML = '<b>' + new Date().toLocaleTimeString() + '</b> ' + String(msg)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  el.appendChild(line);
-  el.scrollTop = el.scrollHeight;
-}
-window.addEventListener('error', e => {
-  dbg('ERROR: ' + (e.message || 'unknown') + ' @ ' + (e.filename || '') + ':' + (e.lineno || ''));
-});
-window.addEventListener('unhandledrejection', e => {
-  dbg('PROMISE ERROR: ' + ((e.reason && (e.reason.message || e.reason.name)) || e.reason || 'unknown'));
-});
+function dbg(msg) {}
 
 
 function getEpubFactory() {
