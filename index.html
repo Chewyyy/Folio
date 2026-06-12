@@ -564,6 +564,53 @@ html.standalone body, html.standalone #app{background:var(--read-bg,#050505)!imp
   z-index:200!important;
 }
 
+
+/* v10 stable turns / reliable updater */
+.header-debug a{
+  display:inline-block;
+  text-decoration:none;
+  border:0;
+  background:var(--accent);
+  color:#fff;
+  border-radius:999px;
+  padding:6px 8px;
+  font-size:10px;
+  font-weight:900;
+}
+.header-debug button{display:none!important}
+
+#reader{
+  width:100vw!important;
+  max-width:none!important;
+  left:0!important;
+  right:0!important;
+}
+#app.reader-open{
+  max-width:none!important;
+  width:100vw!important;
+  box-shadow:none!important;
+}
+#reader.turning-next #viewer,
+#reader.turning-prev #viewer,
+#reader.turning-next::after,
+#reader.turning-prev::after{
+  animation:none!important;
+  content:none!important;
+  transform:none!important;
+}
+#viewer{
+  transform:none!important;
+  opacity:1!important;
+  width:100vw!important;
+  max-width:none!important;
+}
+#viewer iframe{
+  transform:none!important;
+  opacity:1!important;
+  width:100vw!important;
+  max-width:none!important;
+}
+
 </style>
 </head>
 <body>
@@ -575,8 +622,8 @@ html.standalone body, html.standalone #app{background:var(--read-bg,#050505)!imp
       <div class="hdr-left">
         <h1>Folio</h1>
         <div class="header-debug" id="debugRefresh">
-          <span class="ver" id="versionLabel">v9-swipe-fix</span>
-          <button id="refreshBtn" type="button">Refresh</button>
+          <span class="ver" id="versionLabel">v10-stable-turns</span>
+          <a id="refreshBtn" href="./?v=v10-stable-turns-1781295358" role="button">Update</a>
         </div>
       </div>
       <button class="ibtn" id="addbtn" title="Add Book">
@@ -648,7 +695,7 @@ html.standalone body, html.standalone #app{background:var(--read-bg,#050505)!imp
           <polyline points="15 18 9 12 15 6"/>
         </svg>
       </button>
-      <div class="rtitle" id="rtitle"></div>
+      <div class="rtitle" id="rtitle"></div><div id="readerVersionLabel" style="font-size:10px;font-weight:800;opacity:.55;margin-left:4px"></div>
       <div class="rtimer" id="timer">0:00</div>
     </div>
     <div class="rbody">
@@ -760,7 +807,7 @@ html.standalone body, html.standalone #app{background:var(--read-bg,#050505)!imp
 </div>
 
 <script>
-const FOLIO_VERSION = 'v9-swipe-fix';
+const FOLIO_VERSION = 'v10-stable-turns';
 
 function dbg(msg) {}
 
@@ -1176,34 +1223,22 @@ function hideChrome() {
 async function animatedPageTurn(direction) {
   if (!A.rend || A.turningPage) return;
   A.turningPage = true;
-  const r = document.getElementById('reader');
   closeReaderMenu();
   hideChrome();
-
-  if (A.readerSettings.animation) {
-    r?.classList.remove('turning-next','turning-prev');
-    void r?.offsetWidth;
-    r?.classList.add(direction === 'prev' ? 'turning-prev' : 'turning-next');
-  }
 
   try {
     if (direction === 'prev') await A.rend.prev();
     else await A.rend.next();
 
-    setTimeout(forceRefreshLocationStatus, 150);
-    setTimeout(forceRefreshLocationStatus, 450);
+    // EPUB.js emits relocated after navigation, but iOS sometimes delays it.
+    setTimeout(forceRefreshLocationStatus, 100);
+    setTimeout(forceRefreshLocationStatus, 350);
+    setTimeout(forceRefreshLocationStatus, 800);
   } catch(e) {
     console.error('Page turn failed:', e);
-    try {
-      const loc = A.rend.currentLocation();
-      const cfi = Array.isArray(loc) ? loc[0]?.start?.cfi : loc?.start?.cfi;
-      if (cfi) await A.rend.display(cfi);
-    } catch(_) {}
+    toast('Page turn failed');
   } finally {
-    setTimeout(() => {
-      r?.classList.remove('turning-next','turning-prev');
-      A.turningPage = false;
-    }, 220);
+    setTimeout(() => { A.turningPage = false; }, 250);
   }
 }
 function forceRefreshLocationStatus() {
@@ -1419,6 +1454,7 @@ async function openReader(bookId) {
   document.getElementById('rload').style.display = 'flex';
   updateReaderThemeClass();
   document.getElementById('reader').classList.add('active');
+  document.getElementById('app').classList.add('reader-open');
   document.getElementById('reader').classList.remove('chrome');
   wireReaderControlsOnce();
   document.getElementById('bnav').style.display  = 'none';
@@ -1548,6 +1584,7 @@ function closeReader(save=true) {
   closeSheet('tocSheet');
   closeSheet('settingsSheet');
   document.getElementById('reader').classList.remove('active','sheet-open','turning-next','turning-prev');
+  document.getElementById('app').classList.remove('reader-open');
   document.getElementById('bnav').style.display = 'flex';
   A.bookId=null;
   renderLib();
