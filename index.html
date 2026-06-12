@@ -240,6 +240,28 @@ html,body{height:100%;height:100dvh;background:#C8C3BC;
 .yb-status{font-size:15px;font-weight:800;color:#0A84FF;margin-top:2px}
 .yb-sub{font-size:13px;color:var(--sub);margin-top:4px;line-height:1.35}
 
+.reorderbar{display:none;align-items:center;justify-content:space-between;gap:10px;background:rgba(45,106,79,.10);
+  border:1px solid rgba(45,106,79,.16);border-radius:var(--rsm);padding:10px 12px;margin:-4px 0 14px;
+  color:var(--accent);font-size:12px;font-weight:800}
+.reorderbar.on{display:flex}
+.reorderbar button{border:0;background:var(--accent);color:#fff;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:800}
+.bgrid.reorder .bcard{cursor:grab;touch-action:none}
+.bgrid.reorder .bcard:active,.bgrid.reorder .bcard.dragging{cursor:grabbing}
+.bgrid.reorder .bcard.dragging{opacity:.62;transform:scale(.96);box-shadow:var(--shadowLg);z-index:5}
+.bgrid.reorder .bcard::after{content:'↕';position:absolute;top:7px;left:7px;width:28px;height:28px;border-radius:50%;
+  background:rgba(0,0,0,.50);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;
+  backdrop-filter:blur(4px);opacity:0;transition:opacity .15s}
+.bgrid.reorder .bcard::after{opacity:1}
+.bgrid.reorder .morebtn{display:none}
+
+.data-card{background:var(--card);border-radius:var(--r);padding:16px;box-shadow:var(--shadow);margin-bottom:20px}
+.data-card h3{font-size:14px;font-weight:700;margin-bottom:12px}
+.data-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.data-actions button{border:0;border-radius:var(--rsm);background:rgba(45,106,79,.10);color:var(--accent);
+  padding:12px 8px;font-size:13px;font-weight:800;cursor:pointer}
+.data-actions button.primary{background:var(--accent);color:#fff}
+.storage-note{font-size:11px;color:var(--sub);line-height:1.45;margin-top:10px;text-align:center}
+
 .toast{position:absolute;bottom:80px;left:50%;z-index:400;
   transform:translateX(-50%) translateY(10px);
   background:rgba(26,26,26,.9);color:#fff;
@@ -468,7 +490,9 @@ body.reader-open{background:var(--read-bg)!important}
 </style>
 </head>
 <body>
-<input type="file" id="fi" accept=".epub">
+<input type="file" id="fi" accept=".epub" multiple>
+<input type="file" id="folderFi" accept=".epub" multiple webkitdirectory directory>
+<input type="file" id="backupFi" accept=".json,.folio-backup.json,application/json">
 <div id="app">
 
   <!-- ════════ LIBRARY ════════ -->
@@ -494,6 +518,7 @@ body.reader-open{background:var(--read-bg)!important}
         <div class="scard"><span class="v" id="mstreak">0</span><span class="l">Day Streak</span></div>
       </div>
       <div class="sec" id="sectitle">Your Library</div>
+      <div class="reorderbar" id="reorderBar"><span>Drag books to reorganize your library.</span><button id="reorderDone" type="button">Done</button></div>
       <div class="bgrid" id="bgrid"></div>
       <div class="empty" id="empt" style="display:none">
         <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -585,6 +610,16 @@ body.reader-open{background:var(--read-bg)!important}
         </div>
       </div>
       <div class="year-books-card" id="booksYearCard"></div>
+      <div class="data-card">
+        <h3>Data &amp; Backup</h3>
+        <div class="data-actions">
+          <button class="primary" id="exportBackupBtn" type="button">Export Backup</button>
+          <button id="restoreBackupBtn" type="button">Restore Backup</button>
+          <button id="protectDataBtn" type="button">Protect Database</button>
+          <button id="folderRescanBtn" type="button">Rescan Folder</button>
+        </div>
+        <div class="storage-note" id="storageStatus">Local database active.</div>
+      </div>
       <div class="ssec">
         <h3>Recent Sessions</h3>
         <div id="slist"><div class="nodata">No sessions yet.<br>Open a book to start reading!</div></div>
@@ -720,6 +755,25 @@ body.reader-open{background:var(--read-bg)!important}
     </div>
   </div>
 
+
+  <!-- Library tools / import -->
+  <div class="app-sheet-backdrop" id="libraryToolsSheet">
+    <div class="app-sheet">
+      <div class="grabber"></div>
+      <div class="as-title">Library Tools</div>
+      <div class="as-sub">Import EPUBs, rescan a folder, protect the local database, or back up reading data.</div>
+      <div class="as-group">
+        <button class="as-btn" data-libtool="import"><span class="aico">📚</span>Import EPUB Files</button>
+        <button class="as-btn" data-libtool="folder"><span class="aico">📁</span>Rescan Folder</button>
+        <button class="as-btn" data-libtool="reorder"><span class="aico">↕️</span>Reorder Library</button>
+        <button class="as-btn" data-libtool="protect"><span class="aico">🔒</span>Protect Database</button>
+        <button class="as-btn" data-libtool="backup"><span class="aico">⬇️</span>Export Backup</button>
+        <button class="as-btn" data-libtool="restore"><span class="aico">⬆️</span>Restore Backup</button>
+      </div>
+      <div class="as-group"><button class="as-btn cancel" data-appclose="libraryToolsSheet">Cancel</button></div>
+    </div>
+  </div>
+
   <!-- Finish date editor -->
   <div class="app-sheet-backdrop" id="finishSheet">
     <div class="app-sheet">
@@ -817,7 +871,7 @@ body.reader-open{background:var(--read-bg)!important}
 </div>
 
 <script>
-const FOLIO_VERSION = 'v15-reader-polish';
+const FOLIO_VERSION = 'v16-library-data';
 const CHARS_PER_PAGE = 1800;   // ≈ Apple Books / print pagination density
 
 function dbg(msg) {}
@@ -903,32 +957,60 @@ const A = {
   calY: new Date().getFullYear(), calM: new Date().getMonth(),
   daySheetKey: null, finishBookId: null,
   longPressTmr: null, longPressed: false,
+  reorderMode: false, draggingBookEl: null, savedFolderName: '',
 };
 
+const STATE_KEYS = ['f_books','f_sessions','f_progress','f_reader_settings','f_goal','f_bookmarks','f_saved_folder_name'];
+
 async function persist() {
-  if (!window.storage) return;
+  const payload = {
+    f_books: A.books,
+    f_sessions: A.sessions,
+    f_progress: A.progress,
+    f_reader_settings: A.readerSettings,
+    f_goal: A.goal,
+    f_bookmarks: A.bookmarks,
+    f_saved_folder_name: A.savedFolderName || '',
+  };
+  for (const [key, value] of Object.entries(payload)) {
+    const raw = JSON.stringify(value);
+    try { await idbSet(key, raw); } catch(e) {}
+    try { if (window.storage) await window.storage.set(key, raw); } catch(e) {}
+  }
+  updateStorageStatus();
+}
+
+async function loadStateKey(key, fb) {
   try {
-    await window.storage.set('f_books',    JSON.stringify(A.books));
-    await window.storage.set('f_sessions', JSON.stringify(A.sessions));
-    await window.storage.set('f_progress', JSON.stringify(A.progress));
-    await window.storage.set('f_reader_settings', JSON.stringify(A.readerSettings));
-    await window.storage.set('f_goal',      JSON.stringify(A.goal));
-    await window.storage.set('f_bookmarks', JSON.stringify(A.bookmarks));
+    const raw = await idbGet(key);
+    if (raw !== null && raw !== undefined) return typeof raw === 'string' ? JSON.parse(raw) : raw;
   } catch(e) {}
+  try {
+    const r = window.storage ? await window.storage.get(key) : null;
+    if (r) {
+      try { await idbSet(key, r.value); } catch(_) {}
+      return JSON.parse(r.value);
+    }
+  } catch(e) {}
+  return fb;
+}
+
+function normalizeBookOrder() {
+  A.books.forEach((b, i) => {
+    if (!Number.isFinite(Number(b.order))) b.order = i;
+  });
+  A.books.sort((a,b) => (Number(a.order)||0) - (Number(b.order)||0));
+  A.books.forEach((b, i) => { b.order = i; });
 }
 
 async function hydrate() {
-  if (!window.storage) return;
-  const get = async (k, fb) => {
-    try { const r = await window.storage.get(k); return r ? JSON.parse(r.value) : fb; }
-    catch(e) { return fb; }
-  };
-  A.books     = await get('f_books',     []);
-  A.sessions  = await get('f_sessions',  []);
-  A.progress  = await get('f_progress',  {});
-  A.goal      = Object.assign({minutes:15}, await get('f_goal', {}));
-  A.bookmarks = await get('f_bookmarks', {});
-  const saved = await get('f_reader_settings', {});
+  A.books     = await loadStateKey('f_books',     []);
+  A.sessions  = await loadStateKey('f_sessions',  []);
+  A.progress  = await loadStateKey('f_progress',  {});
+  A.goal      = Object.assign({minutes:15}, await loadStateKey('f_goal', {}));
+  A.bookmarks = await loadStateKey('f_bookmarks', {});
+  A.savedFolderName = await loadStateKey('f_saved_folder_name', '');
+  const saved = await loadStateKey('f_reader_settings', {});
   // Migrate old theme/setting names from v13 and earlier.
   if (saved.theme === 'light') saved.theme = 'paper';
   if (saved.theme === 'sepia') saved.theme = 'quiet';
@@ -943,6 +1025,43 @@ async function hydrate() {
       b.finishedAt = b.finishedAt || new Date(A.progress[b.id]?.lastRead || Date.now()).toISOString();
     }
   });
+  normalizeBookOrder();
+  await persist();
+}
+
+async function requestPersistentStorage(showToast=false) {
+  try {
+    if (!navigator.storage || !navigator.storage.persist) {
+      if (showToast) toast('Persistent storage is not supported here. Use backups.');
+      updateStorageStatus();
+      return false;
+    }
+    const already = await navigator.storage.persisted?.();
+    const granted = already || await navigator.storage.persist();
+    if (showToast) toast(granted ? 'Database protection enabled' : 'Database protection not available here');
+    updateStorageStatus();
+    return !!granted;
+  } catch(e) {
+    if (showToast) toast('Could not change storage protection');
+    updateStorageStatus();
+    return false;
+  }
+}
+
+async function updateStorageStatus() {
+  const el = document.getElementById('storageStatus');
+  if (!el) return;
+  let parts = ['IndexedDB storage active'];
+  try {
+    const persisted = await navigator.storage?.persisted?.();
+    parts[0] = persisted ? 'Local database protected from cleanup' : 'Local database active';
+  } catch(e) {}
+  try {
+    const est = await navigator.storage?.estimate?.();
+    if (est?.usage) parts.push(`${Math.round(est.usage/1024/1024)} MB used`);
+  } catch(e) {}
+  if (A.savedFolderName) parts.push(`Folder: ${A.savedFolderName}`);
+  el.textContent = parts.join(' · ');
 }
 
 async function storeEpub(id, buf) {
@@ -1089,6 +1208,7 @@ const GRADS = [
 ];
 
 function renderLib() {
+  normalizeBookOrder();
   const totalSecs = A.sessions.reduce((a,s)=>a+(s.secs||0),0);
   document.getElementById('mbooks').textContent  = A.books.length;
   document.getElementById('mtime').textContent   = fmt(totalSecs);
@@ -1097,12 +1217,18 @@ function renderLib() {
   const grid = document.getElementById('bgrid');
   const empt = document.getElementById('empt');
   const sec  = document.getElementById('sectitle');
+  const rbar = document.getElementById('reorderBar');
   if (!A.books.length) {
-    grid.innerHTML=''; empt.style.display='flex'; sec.style.display='none'; return;
+    grid.innerHTML=''; empt.style.display='flex'; sec.style.display='none';
+    if (rbar) rbar.classList.remove('on');
+    return;
   }
   empt.style.display='none'; sec.style.display='block';
+  if (rbar) rbar.classList.toggle('on', !!A.reorderMode);
+  grid.classList.toggle('reorder', !!A.reorderMode);
 
   const sorted = [...A.books].sort((a,b)=>
+    (Number(a.order)||0) - (Number(b.order)||0) ||
     (A.progress[b.id]?.lastRead||0)-(A.progress[a.id]?.lastRead||0));
 
   grid.innerHTML = sorted.map(bk => {
@@ -1122,7 +1248,7 @@ function renderLib() {
         <div class="btitle">${esc(bk.title)}</div>
         <div class="bauth">${esc(bk.author)}</div>
         <div class="pt"><div class="pf" style="width:${pct}%"></div></div>
-        <div class="pl">${stat}</div>
+        <div class="pl">${A.reorderMode ? 'Drag to reorder' : stat}</div>
       </div>
     </div>`;
   }).join('');
@@ -1130,13 +1256,16 @@ function renderLib() {
   grid.querySelectorAll('.bcard').forEach(el => {
     el.addEventListener('selectstart', e => e.preventDefault());
     el.addEventListener('dragstart', e => e.preventDefault());
+    if (A.reorderMode) wireLibraryReorderCard(el);
     el.addEventListener('click', e => {
+      if (A.reorderMode) return;
       if (e.target.closest('.morebtn')) return;
       if (A.longPressed) { A.longPressed = false; return; }
       openReader(el.dataset.id);
     });
-    el.addEventListener('contextmenu', e => { e.preventDefault(); openBookSheet(el.dataset.id); });
+    el.addEventListener('contextmenu', e => { e.preventDefault(); if (!A.reorderMode) openBookSheet(el.dataset.id); });
     el.addEventListener('touchstart', e => {
+      if (A.reorderMode) return;
       clearTimeout(A.longPressTmr);
       A.longPressed = false;
       const t = e.touches[0];
@@ -1169,8 +1298,64 @@ function renderLib() {
     }, {passive:true});
   });
   grid.querySelectorAll('.morebtn').forEach(b =>
-    b.addEventListener('click', e => { e.stopPropagation(); openBookSheet(b.dataset.id); }));
+    b.addEventListener('click', e => { e.stopPropagation(); if (!A.reorderMode) openBookSheet(b.dataset.id); }));
 }
+
+function setReorderMode(on) {
+  A.reorderMode = !!on;
+  renderLib();
+  toast(A.reorderMode ? 'Reorder mode on' : 'Library order saved');
+}
+
+function updateBookOrderFromDom() {
+  const ids = [...document.querySelectorAll('#bgrid .bcard')].map(el => el.dataset.id);
+  ids.forEach((id, idx) => {
+    const bk = A.books.find(b => b.id === id);
+    if (bk) bk.order = idx;
+  });
+  normalizeBookOrder();
+  persist();
+}
+
+function wireLibraryReorderCard(el) {
+  el.addEventListener('pointerdown', e => {
+    if (!A.reorderMode || e.target.closest('.morebtn')) return;
+    e.preventDefault();
+    A.draggingBookEl = el;
+    el.classList.add('dragging');
+    try { el.setPointerCapture(e.pointerId); } catch(_) {}
+    window.getSelection?.().removeAllRanges?.();
+  });
+}
+
+document.addEventListener('pointermove', e => {
+  const drag = A.draggingBookEl;
+  if (!A.reorderMode || !drag) return;
+  e.preventDefault();
+  drag.style.visibility = 'hidden';
+  const target = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('#bgrid .bcard');
+  drag.style.visibility = '';
+  if (!target || target === drag) return;
+  const grid = document.getElementById('bgrid');
+  const r = target.getBoundingClientRect();
+  const before = e.clientY < r.top + r.height/2;
+  grid.insertBefore(drag, before ? target : target.nextSibling);
+});
+
+document.addEventListener('pointerup', async e => {
+  const drag = A.draggingBookEl;
+  if (!drag) return;
+  drag.classList.remove('dragging');
+  A.draggingBookEl = null;
+  updateBookOrderFromDom();
+});
+
+document.addEventListener('pointercancel', () => {
+  if (A.draggingBookEl) A.draggingBookEl.classList.remove('dragging');
+  A.draggingBookEl = null;
+});
+
+document.getElementById('reorderDone')?.addEventListener('click', () => setReorderMode(false));
 
 async function removeBook(id) {
   if (!confirm('Remove this book from your library? Reading sessions are kept.')) return;
@@ -1256,18 +1441,139 @@ function openDetails(id) {
 
 /* ── Import ────────────────────────────────────────────────────── */
 const fi = document.getElementById('fi');
-document.getElementById('addbtn').addEventListener('click', ()=>fi.click());
-document.getElementById('emptadd').addEventListener('click', ()=>fi.click());
+const folderFi = document.getElementById('folderFi');
+const backupFi = document.getElementById('backupFi');
+
+function openLibraryTools() { openAppSheet('libraryToolsSheet'); }
+document.getElementById('addbtn').addEventListener('click', openLibraryTools);
+document.getElementById('emptadd').addEventListener('click', () => fi.click());
+
+function wireToolButton(id, fn) {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('click', fn);
+}
+wireToolButton('exportBackupBtn', exportBackup);
+wireToolButton('restoreBackupBtn', () => backupFi.click());
+wireToolButton('protectDataBtn', () => requestPersistentStorage(true));
+wireToolButton('folderRescanBtn', rescanFolder);
+
+document.querySelectorAll('[data-libtool]').forEach(b => b.addEventListener('click', () => {
+  closeAppSheet('libraryToolsSheet');
+  const act = b.dataset.libtool;
+  if (act === 'import') fi.click();
+  if (act === 'folder') rescanFolder();
+  if (act === 'reorder') setReorderMode(true);
+  if (act === 'protect') requestPersistentStorage(true);
+  if (act === 'backup') exportBackup();
+  if (act === 'restore') backupFi.click();
+}));
 
 fi.addEventListener('change', async e => {
-  const file = e.target.files[0]; if (!file) return;
+  const files = Array.from(e.target.files || []).filter(f => /\.epub$/i.test(f.name));
   const reopen = fi.dataset.reopen; fi.removeAttribute('data-reopen');
-  const id = await ingest(file, reopen||null);
+  if (!files.length) return;
+  const ids = await batchImportFiles(files);
   fi.value='';
-  if (id && reopen) openReader(id);
+  if (reopen && ids[0]) openReader(ids[0]);
 });
 
-async function ingest(file, existId=null) {
+folderFi.addEventListener('change', async e => {
+  const files = Array.from(e.target.files || []).filter(f => /\.epub$/i.test(f.name));
+  if (!files.length) { folderFi.value=''; return; }
+  const firstPath = files[0].webkitRelativePath || files[0].name;
+  A.savedFolderName = firstPath.includes('/') ? firstPath.split('/')[0] : 'Selected files';
+  await batchImportFiles(files, { source: 'folder-input' });
+  folderFi.value='';
+});
+
+backupFi.addEventListener('change', async e => {
+  const file = e.target.files?.[0];
+  if (file) await restoreBackup(file);
+  backupFi.value='';
+});
+
+async function batchImportFiles(files, opts={}) {
+  const list = Array.from(files || []).filter(f => /\.epub$/i.test(f.name));
+  if (!list.length) { toast('No EPUB files selected'); return []; }
+  toast(`Importing ${list.length} EPUB${list.length===1?'':'s'}…`, 8000);
+  const ids = [];
+  let ok = 0;
+  for (const file of list) {
+    const id = await ingest(file, null, opts);
+    if (id) { ids.push(id); ok++; }
+  }
+  normalizeBookOrder();
+  await persist();
+  renderLib(); renderJournal(); renderStats();
+  toast(ok ? `Imported ${ok} EPUB${ok===1?'':'s'}` : 'No EPUBs imported');
+  return ids;
+}
+
+async function rescanFolder() {
+  try {
+    if ('showDirectoryPicker' in window) {
+      let handle = null;
+      try { handle = await idbGet('f_folder_handle'); } catch(_) {}
+      const hasSaved = !!handle;
+      if (!handle || !(await verifyFolderPermission(handle))) {
+        handle = await window.showDirectoryPicker({ mode: 'read' });
+        try { await idbSet('f_folder_handle', handle); } catch(_) {}
+      }
+      A.savedFolderName = handle.name || A.savedFolderName || 'Selected folder';
+      const files = [];
+      for await (const file of walkFolder(handle)) files.push(file);
+      if (!files.length) { toast(`No EPUB files found in ${A.savedFolderName}`); await persist(); return; }
+      await batchImportFiles(files, { source: hasSaved ? 'saved-folder' : 'folder-picker' });
+      return;
+    }
+    if ('webkitdirectory' in folderFi) {
+      folderFi.click();
+      return;
+    }
+  } catch(e) {
+    if (e?.name === 'AbortError') return;
+    console.error('Folder scan failed:', e);
+  }
+  toast('Folder rescan is not supported here. Select EPUB files instead.', 3500);
+  fi.click();
+}
+
+async function verifyFolderPermission(handle) {
+  try {
+    const opts = { mode: 'read' };
+    if ((await handle.queryPermission(opts)) === 'granted') return true;
+    return (await handle.requestPermission(opts)) === 'granted';
+  } catch(e) { return false; }
+}
+
+async function* walkFolder(handle, path='') {
+  for await (const [name, entry] of handle.entries()) {
+    if (entry.kind === 'file' && /\.epub$/i.test(name)) {
+      const file = await entry.getFile();
+      try { Object.defineProperty(file, '_folioPath', { value: path + name, configurable: true }); } catch(_) { file._folioPath = path + name; }
+      yield file;
+    } else if (entry.kind === 'directory') {
+      yield* walkFolder(entry, path + name + '/');
+    }
+  }
+}
+
+function nextBookOrder() {
+  return A.books.length ? Math.max(...A.books.map(b => Number(b.order)||0)) + 1 : 0;
+}
+
+function findExistingBookForFile(file, title, author) {
+  const sourcePath = file._folioPath || file.webkitRelativePath || file.name;
+  const sourceName = file.name;
+  const sourceSize = file.size || 0;
+  return A.books.find(b =>
+    (b.sourcePath && b.sourcePath === sourcePath && (!sourceSize || b.sourceSize === sourceSize)) ||
+    (b.sourceName === sourceName && b.sourceSize === sourceSize) ||
+    (b.title === title && b.author === author && b.sourceName === sourceName)
+  );
+}
+
+async function ingest(file, existId=null, opts={}) {
   toast('Importing…', 6000);
   return new Promise(res => {
     const fr = new FileReader();
@@ -1284,18 +1590,23 @@ async function ingest(file, existId=null) {
           const url = await bk.coverUrl();
           if (url) { const r = await fetch(url); cover = await blob2b64(await r.blob()); }
         } catch(_) {}
-        const id    = existId||uid();
+        const dup   = existId ? null : findExistingBookForFile(file, title, author);
+        const id    = existId || dup?.id || uid();
         const exist = A.books.find(b=>b.id===id);
+        const sourcePath = file._folioPath || file.webkitRelativePath || file.name;
         const entry = { id, title, author, cover,
           added: exist?.added||new Date().toISOString(),
-          finished: exist?.finished||false, finishedAt: exist?.finishedAt };
+          finished: exist?.finished||false, finishedAt: exist?.finishedAt,
+          order: Number.isFinite(Number(exist?.order)) ? Number(exist.order) : nextBookOrder(),
+          sourceName: file.name, sourcePath, sourceSize: file.size || 0, sourceLastModified: file.lastModified || 0 };
         A.books = A.books.filter(b=>b.id!==id);
         A.books.push(entry);
+        normalizeBookOrder();
         const ok = await storeEpub(id, buf);
         try { bk.destroy(); } catch(_) {}
         await persist();
         renderLib();
-        toast(ok ? `Added "${title}"` : `Added "${title}" (storage limited)`);
+        toast(ok ? `${exist ? 'Updated' : 'Added'} "${title}"` : `Added "${title}" (storage limited)`);
         res(id);
       } catch(err) {
         console.error('Import failed:', err);
@@ -1517,7 +1828,7 @@ function renderStats() {
   document.getElementById('sdone').textContent = done;
   document.getElementById('savg').textContent  = fmt(avg);
   document.getElementById('sweek').textContent = fmt(week);
-  renderChart(); renderBooksReadThisYear(); renderSessions();
+  renderChart(); renderBooksReadThisYear(); renderSessions(); updateStorageStatus();
 }
 
 function renderChart() {
@@ -1604,6 +1915,66 @@ function renderSessions() {
     await persist();
     renderStats(); renderLib();
   }));
+}
+
+
+/* ── Backup / restore ─────────────────────────────────────────── */
+function backupPayload() {
+  normalizeBookOrder();
+  return {
+    app: 'Folio', schema: 2, version: FOLIO_VERSION,
+    exportedAt: new Date().toISOString(),
+    note: 'This backup includes Folio reading data and library metadata. EPUB files themselves are not embedded.',
+    books: A.books, sessions: A.sessions, progress: A.progress,
+    bookmarks: A.bookmarks, goal: A.goal, readerSettings: A.readerSettings,
+    savedFolderName: A.savedFolderName || ''
+  };
+}
+
+async function exportBackup() {
+  try {
+    const payload = backupPayload();
+    const json = JSON.stringify(payload, null, 2);
+    const name = `folio-backup-${dayKey(new Date())}.json`;
+    const file = new File([json], name, { type: 'application/json' });
+    if (navigator.canShare && navigator.canShare({ files:[file] })) {
+      await navigator.share({ files:[file], title:'Folio Backup' });
+      toast('Backup exported');
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    const a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+    toast('Backup exported');
+  } catch(e) {
+    console.error('Backup export failed:', e);
+    toast('Could not export backup');
+  }
+}
+
+async function restoreBackup(file) {
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if (!data || data.app !== 'Folio') throw new Error('Not a Folio backup');
+    const msg = 'Restore this Folio backup? This replaces library metadata, stats, journal, progress, bookmarks, and settings. EPUB files are not included in backups.';
+    if (!confirm(msg)) return;
+    A.books = Array.isArray(data.books) ? data.books : [];
+    A.sessions = Array.isArray(data.sessions) ? data.sessions : [];
+    A.progress = data.progress && typeof data.progress === 'object' ? data.progress : {};
+    A.bookmarks = data.bookmarks && typeof data.bookmarks === 'object' ? data.bookmarks : {};
+    A.goal = Object.assign({minutes:15}, data.goal || {});
+    A.readerSettings = Object.assign({}, DEFAULT_SETTINGS, data.readerSettings || {});
+    A.savedFolderName = data.savedFolderName || A.savedFolderName || '';
+    normalizeBookOrder();
+    await persist();
+    renderLib(); renderJournal(); renderStats();
+    toast('Backup restored');
+  } catch(e) {
+    console.error('Restore failed:', e);
+    toast('Restore failed — invalid Folio backup');
+  }
 }
 
 /* ════════════════════ READER ENGINE ════════════════════ */
@@ -2318,6 +2689,7 @@ function wireDebugRefresh() {
 (async function init() {
   wireDebugRefresh();
   await hydrate();
+  requestPersistentStorage(false);
   renderLib();
 })();
 </script>
