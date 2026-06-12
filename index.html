@@ -22,6 +22,7 @@
   --sub:      #6B7280;
   --border:   #E4DFD4;
   --rbg:      #FBF8F2;
+  --gold:     #C9962E;
   --shadow:   0 2px 12px rgba(0,0,0,0.07);
   --shadowLg: 0 8px 28px rgba(0,0,0,0.13);
   --r:        14px;
@@ -57,7 +58,7 @@ html,body{height:100%;height:100dvh;background:#C8C3BC;
 .nbtn svg{width:22px;height:22px}
 .nbtn.active{color:var(--accent)}
 
-.sa{flex:1;overflow-y:auto;padding:16px}
+.sa{flex:1;overflow-y:auto;padding:16px;overscroll-behavior:contain}
 
 .strip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:22px}
 .scard{background:var(--card);border-radius:var(--rsm);padding:12px 8px;text-align:center;
@@ -71,11 +72,12 @@ html,body{height:100%;height:100dvh;background:#C8C3BC;
 .bgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 
 .bcard{background:var(--card);border-radius:var(--r);overflow:hidden;cursor:pointer;
-  box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s;position:relative}
+  box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s;position:relative;
+  -webkit-touch-callout:none;user-select:none}
 .bcard:hover{transform:translateY(-2px);box-shadow:var(--shadowLg)}
 .bcard:active{transform:scale(.97)}
-.bcwrap{width:100%;aspect-ratio:2/3;overflow:hidden}
-.bcover{width:100%;height:100%;object-fit:cover;display:block}
+.bcwrap{width:100%;aspect-ratio:2/3;overflow:hidden;position:relative}
+.bcover{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
 .bph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:38px}
 .bbody{padding:10px 12px 12px}
 .btitle{font-size:13px;font-weight:700;line-height:1.3;margin-bottom:2px;
@@ -85,11 +87,15 @@ html,body{height:100%;height:100dvh;background:#C8C3BC;
 .pt{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
 .pf{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
 .pl{font-size:10px;color:var(--sub);margin-top:4px;font-weight:500}
-.delbtn{position:absolute;top:7px;right:7px;background:rgba(0,0,0,.55);
-  border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;
+.morebtn{position:absolute;top:7px;right:7px;background:rgba(0,0,0,.5);
+  border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  opacity:0;transition:opacity .2s;color:#fff;font-size:14px}
-.bcard:hover .delbtn{opacity:1}
+  color:#fff;font-size:16px;font-weight:800;letter-spacing:1px;line-height:1;
+  backdrop-filter:blur(4px)}
+.fbadge{position:absolute;left:7px;top:7px;background:var(--gold);color:#fff;
+  font-size:9px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;
+  border-radius:999px;padding:4px 8px;box-shadow:0 2px 8px rgba(0,0,0,.25);
+  display:flex;align-items:center;gap:3px}
 
 .empty{display:flex;flex-direction:column;align-items:center;text-align:center;
   padding:52px 24px;gap:10px}
@@ -101,41 +107,83 @@ html,body{height:100%;height:100dvh;background:#C8C3BC;
   transition:background .15s}
 .ctabtn:hover{background:#235c42}
 
-#reader{position:absolute;inset:0;z-index:100;background:var(--rbg);
-  display:none;flex-direction:column}
-#reader.active{display:flex}
+/* ── Journal: daily goal ─────────────────────────── */
+.goalcard{background:var(--accent);color:#fff;border-radius:var(--r);padding:18px;
+  box-shadow:var(--shadow);margin-bottom:14px;position:relative;overflow:hidden}
+.goalcard::after{content:'';position:absolute;right:-30px;top:-30px;width:120px;height:120px;
+  border-radius:50%;background:rgba(255,255,255,.07);pointer-events:none}
+.goaltop{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.goallbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+  color:rgba(255,255,255,.72)}
+.goalval{font-size:26px;font-weight:800;letter-spacing:-.5px;margin-top:3px}
+.goalval small{font-size:14px;font-weight:600;color:rgba(255,255,255,.75)}
+.goaledit{background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:999px;
+  padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer}
+.goalbar{height:10px;background:rgba(0,0,0,.22);border-radius:999px;overflow:hidden}
+.goalfill{height:100%;background:#fff;border-radius:999px;transition:width .6s cubic-bezier(.22,1,.36,1);
+  min-width:0}
+.goalfill.met{background:#FFD970}
+.goalsub{font-size:12px;color:rgba(255,255,255,.82);margin-top:9px;font-weight:600;
+  display:flex;justify-content:space-between}
 
-.rtop{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;
-  background:rgba(251,248,242,.96);border-bottom:1px solid var(--border);
-  backdrop-filter:blur(8px)}
-.rtitle{flex:1;font-size:13px;font-weight:600;text-align:center;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rtimer{font-size:13px;font-weight:700;color:var(--accent);
-  font-variant-numeric:tabular-nums;min-width:44px;text-align:right}
+.streakrow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.streakcard{background:var(--card);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow);
+  display:flex;align-items:center;gap:12px}
+.streakcard .ico{font-size:24px}
+.streakcard .n{font-size:22px;font-weight:800;line-height:1}
+.streakcard .t{font-size:10px;color:var(--sub);font-weight:600;margin-top:3px;
+  text-transform:uppercase;letter-spacing:.5px}
 
-.rbody{flex:1;position:relative;overflow:hidden}
-#viewer{position:absolute;inset:0}
-.tzone{position:absolute;top:0;height:100%;z-index:5;cursor:pointer}
-#tprev{left:0;width:18%}
-#tnext{right:0;width:18%}
-.rload{position:absolute;inset:0;z-index:20;background:var(--rbg);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
-.spin{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);
-  border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.spinlbl{font-size:13px;color:var(--sub)}
+/* ── Journal: calendar ───────────────────────────── */
+.calcard{background:var(--card);border-radius:var(--r);padding:16px;box-shadow:var(--shadow);
+  margin-bottom:20px}
+.calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.calhead h3{font-size:15px;font-weight:800}
+.calnav{display:flex;gap:4px}
+.calnav button{background:rgba(45,106,79,.1);border:none;color:var(--accent);width:30px;height:30px;
+  border-radius:50%;font-size:16px;font-weight:800;cursor:pointer;line-height:1}
+.calnav button:disabled{opacity:.3;cursor:default}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.caldow{text-align:center;font-size:9px;font-weight:700;color:var(--sub);
+  text-transform:uppercase;padding:4px 0 7px}
+.calday{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:none;
+  color:var(--text);position:relative;gap:2px}
+.calday:active{background:rgba(45,106,79,.08)}
+.calday.out{opacity:0;pointer-events:none}
+.calday.future{color:#C9C4BA;cursor:default}
+.calday .dot{width:5px;height:5px;border-radius:50%;background:transparent}
+.calday.read .dot{background:var(--acc2)}
+.calday.met{background:var(--accent);color:#fff;font-weight:800}
+.calday.met .dot{background:rgba(255,255,255,.85)}
+.calday.today{box-shadow:inset 0 0 0 2px var(--accent)}
+.calday.met.today{box-shadow:inset 0 0 0 2px var(--gold)}
+.callegend{display:flex;gap:16px;margin-top:12px;justify-content:center}
+.callegend span{font-size:10px;color:var(--sub);font-weight:600;display:flex;align-items:center;gap:5px}
+.lgdot{width:8px;height:8px;border-radius:50%;display:inline-block}
 
-.rbot{display:flex;align-items:center;gap:10px;
-  padding:10px 14px env(safe-area-inset-bottom,10px);
-  background:rgba(251,248,242,.96);border-top:1px solid var(--border);
-  backdrop-filter:blur(8px)}
-.pgbtn{background:none;border:none;cursor:pointer;color:var(--accent);
-  font-size:26px;padding:4px 6px;min-width:38px;font-weight:300;line-height:1}
-.rpw{flex:1}
-.rpt{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
-.rpf{height:100%;background:var(--accent);border-radius:2px;transition:width .5s}
-.rpl{font-size:11px;color:var(--sub);text-align:center;margin-top:4px;font-weight:500}
+/* ── Journal: finished timeline ──────────────────── */
+.tlyear{display:flex;align-items:baseline;gap:10px;margin:6px 0 12px}
+.tlyear h3{font-size:19px;font-weight:800;letter-spacing:-.4px}
+.tlyear span{font-size:11px;color:var(--sub);font-weight:600}
+.tlwrap{position:relative;padding-left:18px;margin-bottom:8px}
+.tlwrap::before{content:'';position:absolute;left:5px;top:8px;bottom:8px;width:2px;
+  background:var(--border);border-radius:2px}
+.tlrow{background:var(--card);border-radius:var(--rsm);padding:10px 12px;margin-bottom:10px;
+  box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;position:relative;cursor:pointer}
+.tlrow::before{content:'';position:absolute;left:-17.5px;top:50%;transform:translateY(-50%);
+  width:9px;height:9px;border-radius:50%;background:var(--gold);
+  box-shadow:0 0 0 3px var(--bg)}
+.tlcov{width:38px;height:56px;border-radius:5px;object-fit:cover;flex-shrink:0;
+  box-shadow:0 2px 6px rgba(0,0,0,.2);background:linear-gradient(135deg,#2D6A4F,#52B788);
+  display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden}
+.tlcov img{width:100%;height:100%;object-fit:cover}
+.tlinf{flex:1;min-width:0}
+.tltitle{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tldate{font-size:11px;color:var(--sub);margin-top:2px;font-weight:500}
+.tledit{color:var(--sub);font-size:17px;flex-shrink:0;padding:4px}
 
+/* ── Stats ───────────────────────────────────────── */
 .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
 .stcard{background:var(--card);border-radius:var(--r);padding:16px;box-shadow:var(--shadow)}
 .stcard.grn{background:var(--accent);color:#fff}
@@ -146,24 +194,32 @@ html,body{height:100%;height:100dvh;background:#C8C3BC;
 .stcard.grn .stsub{color:rgba(255,255,255,.75)}
 
 .chcard{background:var(--card);border-radius:var(--r);padding:16px;
-  box-shadow:var(--shadow);margin-bottom:20px}
+  box-shadow:var(--shadow);margin-bottom:20px;position:relative}
 .chcard h3{font-size:14px;font-weight:700;margin-bottom:16px}
-.bchart{display:flex;align-items:flex-end;gap:6px;height:80px}
+.bchartwrap{position:relative}
+.goal-line{position:absolute;left:0;right:0;border-top:2px dashed rgba(201,150,46,.55);
+  pointer-events:none;z-index:1}
+.goal-line span{position:absolute;right:0;top:-15px;font-size:9px;font-weight:700;color:var(--gold)}
+.bchart{display:flex;align-items:flex-end;gap:6px;height:80px;position:relative}
 .bcol{flex:1;display:flex;flex-direction:column;align-items:center;
   justify-content:flex-end;gap:5px;height:100%}
 .bar{width:100%;background:var(--accent);border-radius:4px 4px 0 0;min-height:3px;opacity:.65}
 .bar.today{opacity:1}
 .bar.zero{opacity:.18}
+.bar.met{background:var(--gold);opacity:.9}
 .blbl{font-size:9px;color:var(--sub);font-weight:600}
 
 .ssec h3{font-size:14px;font-weight:700;margin-bottom:12px}
 .srow{background:var(--card);border-radius:var(--rsm);padding:12px 14px;
   margin-bottom:8px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px}
 .sdot{width:8px;height:8px;background:var(--accent);border-radius:50%;flex-shrink:0}
+.sdot.manual{background:var(--gold)}
 .sinf{flex:1;min-width:0}
 .sbook{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .smeta{font-size:11px;color:var(--sub);margin-top:2px}
 .sdur{font-size:15px;font-weight:800;color:var(--accent);flex-shrink:0}
+.sdel{background:none;border:none;color:var(--sub);font-size:15px;cursor:pointer;
+  padding:4px 2px;flex-shrink:0;opacity:.55}
 .nodata{text-align:center;color:var(--sub);font-size:14px;padding:32px;line-height:1.65}
 
 .toast{position:absolute;bottom:80px;left:50%;z-index:400;
@@ -178,84 +234,233 @@ input[type=file]{display:none}
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 
-
-
 @media (display-mode: standalone) {
   #app{max-width:none;width:100vw;height:100vh;height:100dvh;box-shadow:none}
   body{background:var(--bg)}
 }
-
-
-/* v11 clean reader layer */
-.hdr-left{display:flex;align-items:center;gap:10px}.header-debug{display:flex;align-items:center;gap:6px;background:rgba(45,106,79,.10);border:1px solid rgba(45,106,79,.18);color:var(--accent);border-radius:999px;padding:5px 6px 5px 9px;font-size:10px;font-weight:800;line-height:1}.header-debug .ver{max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.header-debug a{text-decoration:none;background:var(--accent);color:#fff;border-radius:999px;padding:6px 8px;font-size:10px;font-weight:900}
-#reader{background:var(--read-bg,#FBF8F2)!important;color:var(--read-fg,#1A1A1A);overflow:hidden}#reader.light{--read-bg:#FBF8F2;--read-fg:#1A1A1A;--read-sub:#7A7D86;--read-panel:rgba(255,255,255,.94);--read-sheet:rgba(246,246,248,.97)}#reader.sepia{--read-bg:#F2E8D5;--read-fg:#251A10;--read-sub:#786957;--read-panel:rgba(248,239,221,.95);--read-sheet:rgba(248,239,221,.98)}#reader.dark{--read-bg:#050505;--read-fg:#F5F5F7;--read-sub:#8F8F98;--read-panel:rgba(36,36,39,.94);--read-sheet:rgba(31,31,33,.98)}
-#app.reader-open{max-width:none!important;width:100vw!important;box-shadow:none!important;background:var(--read-bg)!important}body.reader-open{background:var(--read-bg)!important}.rbody{background:var(--read-bg)!important;padding-bottom:0!important}#viewer{position:absolute!important;left:0!important;right:0!important;top:0!important;bottom:58px!important;width:100%!important;background:var(--read-bg)!important;overflow:hidden!important}#viewer iframe{border:0!important;background:var(--read-bg)!important}.rload{background:var(--read-bg)!important}.rbot{display:none!important}
-.rtop{position:absolute;top:calc(8px + env(safe-area-inset-top,0px));left:12px;right:12px;z-index:70;border:1px solid rgba(128,128,128,.18);background:var(--read-panel);color:var(--read-fg);border-radius:26px;box-shadow:0 10px 30px rgba(0,0,0,.18);backdrop-filter:blur(18px);opacity:0;transform:translateY(-8px);pointer-events:none;transition:opacity .18s ease,transform .18s ease}#reader.chrome .rtop{opacity:1;transform:translateY(0);pointer-events:auto}#reader .ibtn{color:var(--accent)}#reader.dark .ibtn{color:#F5F5F7}.rtitle{font-size:15px;font-weight:800}.rtimer{font-size:14px;color:var(--accent)}#reader.dark .rtimer{color:#D6D6DB}
-.tzone{position:absolute;top:0;bottom:58px;height:auto!important;z-index:8;cursor:pointer}#tprev{left:0;width:24%}#tnext{right:0;width:24%}#tmenu{left:24%;width:52%}.menu-fab{position:absolute;right:18px;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:80;width:58px;height:58px;border:0;border-radius:22px;background:rgba(72,72,76,.92);color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 32px rgba(0,0,0,.26);backdrop-filter:blur(18px);opacity:0;transform:translateY(8px) scale(.96);pointer-events:none;transition:opacity .18s ease,transform .18s ease}#reader.chrome .menu-fab{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}.menu-fab.open{transform:rotate(90deg) scale(1)}
-.reader-menu{position:absolute;right:16px;bottom:calc(142px + env(safe-area-inset-bottom,0px));z-index:90;display:flex;flex-direction:column;gap:9px;opacity:0;transform:translateY(10px) scale(.96);pointer-events:none;transition:opacity .18s ease,transform .18s ease}.reader-menu.open{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}.menu-pill{min-width:270px;border:0;color:#fff;background:rgba(72,72,76,.92);backdrop-filter:blur(18px);box-shadow:0 12px 32px rgba(0,0,0,.26);border-radius:28px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;font-size:18px;font-weight:500}#reader.sheet-open .menu-fab,#reader.sheet-open .reader-menu{display:none!important}
-.reader-status-top,.reader-status-bottom{position:absolute;left:0;right:0;z-index:45;text-align:center;color:var(--read-sub);pointer-events:none}.reader-status-top{top:calc(20px + env(safe-area-inset-top,0px));font-size:15px;font-weight:700;opacity:0}#reader.chrome .reader-status-top{opacity:.9}.reader-status-bottom{bottom:calc(4px + env(safe-area-inset-bottom,0px));height:52px;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;background:var(--read-bg);font-size:16px;font-weight:800}.reader-progress{width:min(72vw,310px);height:6px;border-radius:999px;background:#8E8E93;overflow:hidden;opacity:0;transform:translateY(3px);transition:opacity .18s ease,transform .18s ease}.reader-progress-fill{height:100%;width:0%;border-radius:999px;background:#007AFF;transition:width .25s ease}#reader.chrome .reader-progress{opacity:1;transform:translateY(0)}
-.sheet-backdrop{position:absolute;inset:0;z-index:200;background:rgba(0,0,0,.28);display:none;align-items:flex-end;justify-content:center}.sheet-backdrop.on{display:flex}.sheet{width:100%;max-width:430px;max-height:86vh;overflow:hidden;border-radius:30px 30px 0 0;background:var(--read-sheet);color:var(--read-fg);padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -18px 45px rgba(0,0,0,.28);backdrop-filter:blur(22px)}.sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.sheet-title{text-align:center;flex:1;font-size:20px;font-weight:800}.sheet-sub{text-align:center;opacity:.65;margin-top:4px}.sheet-close{border:0;background:#fff;color:#111;border-radius:50%;width:46px;height:46px;font-size:28px;line-height:1;box-shadow:0 2px 12px rgba(0,0,0,.18)}.toc-list{max-height:62vh;overflow:auto}.toc-item{display:flex;align-items:center;justify-content:space-between;gap:14px;border:0;border-bottom:1px solid rgba(118,118,128,.22);padding:15px 8px;width:100%;background:transparent;color:inherit;text-align:left;font-size:16px}.toc-item span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.settings-group{background:rgba(118,118,128,.14);border-radius:22px;padding:14px;margin-bottom:14px}.setting-label{font-size:13px;font-weight:700;opacity:.65;margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px}.theme-row,.font-row{display:flex;gap:10px;align-items:center}.choice{flex:1;border:0;border-radius:18px;padding:14px 10px;font-size:16px;font-weight:700;background:rgba(255,255,255,.75);color:#111}.choice.on{outline:3px solid #007AFF}#reader.dark .choice{background:rgba(118,118,128,.35);color:#fff}.font-btn{border:0;border-radius:18px;background:rgba(118,118,128,.20);color:inherit;padding:12px 18px;font-weight:800}.font-sample{flex:1;text-align:center;font-size:17px;font-weight:700}.toggle-row{display:flex;align-items:center;justify-content:space-between;font-size:17px;font-weight:650}.switch{width:52px;height:32px;border:0;border-radius:18px;background:rgba(118,118,128,.35);position:relative}.switch:before{content:"";position:absolute;width:28px;height:28px;border-radius:50%;background:#fff;left:2px;top:2px;transition:left .18s}.switch.on{background:#007AFF}.switch.on:before{left:22px}
-
-
-/* v12 page counter fix */
-#viewer,#viewer iframe{
-  transform:none!important;
-  opacity:1!important;
-}
-#reader.turning-next #viewer,
-#reader.turning-prev #viewer,
-#reader.turning-next::after,
-#reader.turning-prev::after{
-  animation:none!important;
-  content:none!important;
-  transform:none!important;
-}
-.header-debug a{
-  display:inline-block;
-  text-decoration:none;
-  background:var(--accent);
-  color:#fff;
-  border-radius:999px;
-  padding:6px 8px;
-  font-size:10px;
-  font-weight:900;
+@media (prefers-reduced-motion: reduce){
+  *{transition-duration:.01ms!important;animation-duration:.01ms!important}
 }
 
+/* ── Header pill ─────────────────────────────────── */
+.hdr-left{display:flex;align-items:center;gap:10px}
+.header-debug{display:flex;align-items:center;gap:6px;background:rgba(45,106,79,.10);
+  border:1px solid rgba(45,106,79,.18);color:var(--accent);border-radius:999px;
+  padding:5px 6px 5px 9px;font-size:10px;font-weight:800;line-height:1}
+.header-debug .ver{max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.header-debug a{display:inline-block;text-decoration:none;background:var(--accent);color:#fff;
+  border-radius:999px;padding:6px 8px;font-size:10px;font-weight:900}
 
-/* v13 screen-page map pagination */
-.paginating-badge{
-  position:absolute;
-  left:50%;
-  bottom:calc(84px + env(safe-area-inset-bottom,0px));
-  transform:translateX(-50%);
-  z-index:125;
-  background:rgba(72,72,76,.92);
-  color:#fff;
-  border-radius:999px;
-  padding:9px 14px;
-  font-size:12px;
-  font-weight:800;
-  box-shadow:0 8px 24px rgba(0,0,0,.24);
-  backdrop-filter:blur(16px);
-  display:none;
-}
-.paginating-badge.on{display:block}
-.reader-progress-fill{background:#007AFF!important}
-.reader-progress{background:#8E8E93!important}
+/* ── Reader shell + themes ───────────────────────── */
+#reader{position:absolute;inset:0;z-index:100;display:none;flex-direction:column;
+  background:var(--read-bg,#FBF8F2)!important;color:var(--read-fg,#1A1A1A);overflow:hidden}
+#reader.active{display:flex}
+#reader.t-original{--read-bg:#FFFFFF;--read-fg:#1A1A1A;--read-sub:#7A7D86;--read-panel:rgba(255,255,255,.94);--read-sheet:rgba(246,246,248,.97);--read-link:#0B57D0}
+#reader.t-quiet{--read-bg:#F2E8D5;--read-fg:#3D2E1E;--read-sub:#786957;--read-panel:rgba(248,239,221,.95);--read-sheet:rgba(248,239,221,.98);--read-link:#7A5C2E}
+#reader.t-paper{--read-bg:#FBF8F2;--read-fg:#1A1A1A;--read-sub:#7A7D86;--read-panel:rgba(255,255,255,.94);--read-sheet:rgba(246,246,248,.97);--read-link:#2D6A4F}
+#reader.t-calm{--read-bg:#E8EBEF;--read-fg:#2B3440;--read-sub:#76808E;--read-panel:rgba(241,243,246,.95);--read-sheet:rgba(241,243,246,.98);--read-link:#3E5C8A}
+#reader.t-focus{--read-bg:#23252A;--read-fg:#E8E8EC;--read-sub:#9A9AA4;--read-panel:rgba(46,48,54,.94);--read-sheet:rgba(40,42,47,.98);--read-link:#9DB8E8}
+#reader.t-night{--read-bg:#000000;--read-fg:#D9D9DE;--read-sub:#7E7E88;--read-panel:rgba(32,32,35,.94);--read-sheet:rgba(26,26,28,.98);--read-link:#8FA8D8}
+#reader.t-focus,#reader.t-night{color-scheme:dark}
+#app.reader-open{max-width:none!important;width:100vw!important;box-shadow:none!important;background:var(--read-bg)!important}
+body.reader-open{background:var(--read-bg)!important}
+.rbody{flex:1;position:relative;overflow:hidden;background:var(--read-bg)!important}
 
+/* viewer + page-turn animation wrapper */
+#viewerWrap{position:absolute;left:0;right:0;top:0;bottom:58px;
+  will-change:transform,opacity;transition:none}
+#viewerWrap.anim{transition:transform .16s ease-out,opacity .16s ease-out}
+#viewerWrap.anim-in{transition:transform .19s cubic-bezier(.22,1,.36,1),opacity .19s ease-out}
+#viewer{position:absolute;inset:0;width:100%;background:var(--read-bg)!important;overflow:hidden}
+#reader.flow-scroll #viewer{overflow:visible}
+#viewer iframe{border:0!important;background:var(--read-bg)!important}
+.rload{position:absolute;inset:0;z-index:20;background:var(--read-bg)!important;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.spin{width:36px;height:36px;border:3px solid rgba(128,128,128,.25);border-top-color:var(--accent);
+  border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinlbl{font-size:13px;color:var(--read-sub,#6B7280)}
+#brightOverlay{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:60}
+
+/* top chrome bar */
+.rtop{position:absolute;top:calc(8px + env(safe-area-inset-top,0px));left:12px;right:12px;z-index:70;
+  display:flex;align-items:center;gap:8px;padding:8px 10px;
+  border:1px solid rgba(128,128,128,.18);background:var(--read-panel);color:var(--read-fg);
+  border-radius:26px;box-shadow:0 10px 30px rgba(0,0,0,.18);backdrop-filter:blur(18px);
+  opacity:0;transform:translateY(-8px);pointer-events:none;transition:opacity .18s,transform .18s}
+#reader.chrome .rtop{opacity:1;transform:translateY(0);pointer-events:auto}
+#reader .ibtn{color:var(--accent)}
+#reader.t-focus .ibtn,#reader.t-night .ibtn{color:#F5F5F7}
+.rtitle{flex:1;font-size:15px;font-weight:800;text-align:center;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rtimer{font-size:14px;font-weight:700;color:var(--accent);
+  font-variant-numeric:tabular-nums;min-width:44px;text-align:right}
+#reader.t-focus .rtimer,#reader.t-night .rtimer{color:#D6D6DB}
+#bmBtn.bm-on{color:var(--gold)!important}
+#bmBtn.bm-on svg{fill:var(--gold)}
+
+/* tap zones */
+.tzone{position:absolute;top:0;bottom:58px;z-index:8;cursor:pointer}
+#tprev{left:0;width:24%}#tnext{right:0;width:24%}#tmenu{left:24%;width:52%}
+#reader.flow-scroll #tprev,#reader.flow-scroll #tnext,#reader.flow-scroll #tmenu{display:none}
+
+/* floating menu */
+.menu-fab{position:absolute;right:18px;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:80;
+  width:58px;height:58px;border:0;border-radius:22px;background:rgba(72,72,76,.92);color:#fff;
+  font-size:28px;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 12px 32px rgba(0,0,0,.26);backdrop-filter:blur(18px);
+  opacity:0;transform:translateY(8px) scale(.96);pointer-events:none;transition:opacity .18s,transform .18s}
+#reader.chrome .menu-fab{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}
+.menu-fab.open{transform:rotate(90deg) scale(1)}
+.reader-menu{position:absolute;right:16px;bottom:calc(142px + env(safe-area-inset-bottom,0px));z-index:90;
+  display:flex;flex-direction:column;gap:9px;opacity:0;transform:translateY(10px) scale(.96);
+  pointer-events:none;transition:opacity .18s,transform .18s}
+.reader-menu.open{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}
+.menu-pill{min-width:270px;border:0;color:#fff;background:rgba(72,72,76,.92);backdrop-filter:blur(18px);
+  box-shadow:0 12px 32px rgba(0,0,0,.26);border-radius:28px;padding:16px 18px;
+  display:flex;align-items:center;justify-content:space-between;font-size:18px;font-weight:500;cursor:pointer}
+#reader.sheet-open .menu-fab,#reader.sheet-open .reader-menu{display:none!important}
+
+/* status + scrubber */
+.reader-status-top{position:absolute;left:0;right:0;z-index:45;text-align:center;
+  color:var(--read-sub);pointer-events:none;top:calc(20px + env(safe-area-inset-top,0px));
+  font-size:15px;font-weight:700;opacity:0;transition:opacity .18s}
+#reader.chrome .reader-status-top{opacity:.9}
+.reader-status-bottom{position:absolute;left:0;right:0;bottom:calc(4px + env(safe-area-inset-bottom,0px));
+  z-index:45;height:52px;display:flex;flex-direction:column;gap:6px;align-items:center;
+  justify-content:center;background:var(--read-bg);color:var(--read-sub);
+  font-size:15px;font-weight:700;pointer-events:none}
+.scrubwrap{width:min(78vw,330px);height:24px;display:none;align-items:center;pointer-events:auto}
+#reader.chrome .scrubwrap{display:flex}
+#scrub{width:100%;-webkit-appearance:none;appearance:none;height:6px;border-radius:999px;
+  background:rgba(128,128,128,.45);outline:none;cursor:pointer}
+#scrub::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+  background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.35);border:none}
+#scrub::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;
+  box-shadow:0 1px 6px rgba(0,0,0,.35);border:none}
+
+/* sheets */
+.sheet-backdrop{position:absolute;inset:0;z-index:200;background:rgba(0,0,0,.28);
+  display:none;align-items:flex-end;justify-content:center}
+.sheet-backdrop.on{display:flex}
+.sheet{width:100%;max-width:430px;max-height:88dvh;overflow:hidden;display:flex;flex-direction:column;
+  border-radius:30px 30px 0 0;background:var(--read-sheet,rgba(246,246,248,.97));color:var(--read-fg,#1A1A1A);
+  padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));
+  box-shadow:0 -18px 45px rgba(0,0,0,.28);backdrop-filter:blur(22px)}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-shrink:0}
+.sheet-title{text-align:center;flex:1;font-size:20px;font-weight:800}
+.sheet-sub{text-align:center;opacity:.65;margin-top:4px;font-size:13px}
+.sheet-close{border:0;background:#fff;color:#111;border-radius:50%;width:46px;height:46px;
+  font-size:24px;line-height:1;box-shadow:0 2px 12px rgba(0,0,0,.18);cursor:pointer;flex-shrink:0}
+.sheet-body{overflow-y:auto;flex:1;min-height:0;overscroll-behavior:contain}
+
+.toc-list{overflow:auto}
+.toc-item{display:flex;align-items:center;justify-content:space-between;gap:14px;border:0;
+  border-bottom:1px solid rgba(118,118,128,.22);padding:15px 8px;width:100%;background:transparent;
+  color:inherit;text-align:left;font-size:16px;cursor:pointer}
+.toc-item span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toc-tabs{display:flex;gap:8px;margin-bottom:12px;flex-shrink:0}
+.toc-tab{flex:1;border:0;border-radius:14px;padding:10px;font-size:14px;font-weight:700;
+  background:rgba(118,118,128,.14);color:inherit;cursor:pointer}
+.toc-tab.on{background:var(--accent);color:#fff}
+.bm-row{display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(118,118,128,.22);
+  padding:13px 6px;cursor:pointer}
+.bm-row .bmi{color:var(--gold);font-size:17px}
+.bm-row .bmt{flex:1;min-width:0}
+.bm-row .bmt b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bm-row .bmt span{font-size:11px;opacity:.6}
+.bm-del{background:none;border:0;color:inherit;opacity:.5;font-size:16px;cursor:pointer;padding:4px}
+
+/* settings controls */
+.settings-group{background:rgba(118,118,128,.14);border-radius:22px;padding:14px;margin-bottom:14px}
+.setting-label{font-size:12px;font-weight:700;opacity:.65;margin-bottom:10px;
+  text-transform:uppercase;letter-spacing:.4px}
+.theme-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.theme-swatch{border:2px solid rgba(128,128,128,.25);border-radius:16px;padding:13px 6px;cursor:pointer;
+  font-size:17px;font-weight:700;text-align:center}
+.theme-swatch small{display:block;font-size:10px;font-weight:600;opacity:.65;margin-top:3px}
+.theme-swatch.on{border-color:#007AFF;outline:2px solid rgba(0,122,255,.3)}
+.font-row{display:flex;gap:10px;align-items:center}
+.font-btn{border:0;border-radius:18px;background:rgba(118,118,128,.20);color:inherit;
+  padding:12px 18px;font-weight:800;font-size:16px;cursor:pointer}
+.font-sample{flex:1;text-align:center;font-size:17px;font-weight:700}
+.chiprow{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.chiprow::-webkit-scrollbar{display:none}
+.fchip{flex-shrink:0;border:2px solid rgba(128,128,128,.25);background:transparent;color:inherit;
+  border-radius:16px;padding:10px 16px;font-size:15px;cursor:pointer;white-space:nowrap}
+.fchip.on{border-color:#007AFF;background:rgba(0,122,255,.08)}
+.seg{display:flex;background:rgba(118,118,128,.18);border-radius:14px;padding:3px}
+.seg button{flex:1;border:0;border-radius:11px;background:transparent;color:inherit;
+  padding:9px 6px;font-size:13px;font-weight:700;cursor:pointer}
+.seg button.on{background:#fff;color:#111;box-shadow:0 1px 6px rgba(0,0,0,.15)}
+#reader.t-focus .seg button.on,#reader.t-night .seg button.on{background:#555;color:#fff}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;font-size:16px;
+  font-weight:650;padding:4px 2px}
+.toggle-row + .toggle-row{margin-top:12px;border-top:1px solid rgba(118,118,128,.18);padding-top:14px}
+.switch{width:52px;height:32px;border:0;border-radius:18px;background:rgba(118,118,128,.35);
+  position:relative;cursor:pointer;flex-shrink:0}
+.switch:before{content:"";position:absolute;width:28px;height:28px;border-radius:50%;
+  background:#fff;left:2px;top:2px;transition:left .18s}
+.switch.on{background:#34C759}
+.switch.on:before{left:22px}
+.brightness-row{display:flex;align-items:center;gap:12px;font-size:18px}
+.brightness-row input{flex:1;-webkit-appearance:none;appearance:none;height:6px;border-radius:999px;
+  background:rgba(128,128,128,.4);outline:none}
+.brightness-row input::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;
+  border-radius:50%;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.3)}
+
+/* action / form sheets (app-level) */
+.app-sheet-backdrop{position:absolute;inset:0;z-index:300;background:rgba(0,0,0,.32);
+  display:none;align-items:flex-end;justify-content:center}
+.app-sheet-backdrop.on{display:flex}
+.app-sheet{width:100%;max-width:430px;max-height:88dvh;overflow-y:auto;border-radius:24px 24px 0 0;
+  background:var(--bg);padding:16px 16px calc(20px + env(safe-area-inset-bottom,0px));
+  box-shadow:0 -18px 45px rgba(0,0,0,.3)}
+.grabber{width:38px;height:5px;border-radius:3px;background:rgba(0,0,0,.18);margin:0 auto 14px}
+.as-title{font-size:16px;font-weight:800;text-align:center;margin-bottom:4px}
+.as-sub{font-size:12px;color:var(--sub);text-align:center;margin-bottom:14px}
+.as-group{background:var(--card);border-radius:var(--r);overflow:hidden;margin-bottom:12px;
+  box-shadow:var(--shadow)}
+.as-btn{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;
+  padding:15px 16px;font-size:15px;font-weight:600;color:var(--text);cursor:pointer;text-align:left}
+.as-btn + .as-btn{border-top:1px solid var(--border)}
+.as-btn .aico{width:22px;text-align:center;font-size:17px}
+.as-btn.danger{color:#C0392B}
+.as-btn.cancel{justify-content:center;font-weight:700}
+.frm label{display:block;font-size:11px;font-weight:700;color:var(--sub);
+  text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px}
+.frm input,.frm select{width:100%;border:1px solid var(--border);border-radius:var(--rsm);
+  background:var(--card);padding:13px 14px;font-size:16px;color:var(--text);
+  font-family:inherit;outline:none}
+.frm input:focus,.frm select:focus{border-color:var(--accent)}
+.frm .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btnrow{display:flex;gap:10px;margin-top:18px}
+.btnrow .ctabtn{flex:1;margin-top:0;padding:14px}
+.btnrow .ghost{flex:1;background:var(--card);color:var(--text);border:1px solid var(--border);
+  border-radius:var(--rsm);padding:14px;font-size:15px;font-weight:700;cursor:pointer}
+.btnrow .ghost.danger{color:#C0392B}
+.goalchips{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:6px}
+.gchip{border:2px solid var(--border);background:var(--card);border-radius:var(--rsm);
+  padding:11px 4px;font-size:14px;font-weight:700;cursor:pointer;color:var(--text)}
+.gchip.on{border-color:var(--accent);background:rgba(45,106,79,.08);color:var(--accent)}
+.dsess{background:var(--card);border-radius:var(--rsm);box-shadow:var(--shadow);
+  padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:11px}
+.daytotal{text-align:center;font-size:13px;font-weight:700;color:var(--sub);margin-bottom:12px}
+.daytotal b{color:var(--accent);font-size:15px}
 </style>
 </head>
 <body>
 <input type="file" id="fi" accept=".epub">
 <div id="app">
 
+  <!-- ════════ LIBRARY ════════ -->
   <div class="screen active" id="lib">
     <div class="hdr">
       <div class="hdr-left">
         <h1>Folio</h1>
         <div class="header-debug" id="debugRefresh">
-          <span class="ver" id="versionLabel">v13-page-map</span>
-          <a id="refreshBtn" href="./?v=v13-page-map-1781296816" role="button">Update</a>
+          <span class="ver" id="versionLabel">v14</span>
+          <a id="refreshBtn" href="./" role="button">Update</a>
         </div>
       </div>
       <button class="ibtn" id="addbtn" title="Add Book">
@@ -284,6 +489,52 @@ input[type=file]{display:none}
     </div>
   </div>
 
+  <!-- ════════ JOURNAL ════════ -->
+  <div class="screen" id="journal">
+    <div class="hdr"><h1>Journal</h1></div>
+    <div class="sa">
+      <div class="goalcard">
+        <div class="goaltop">
+          <div>
+            <div class="goallbl">Today's Reading</div>
+            <div class="goalval"><span id="gToday">0</span><small> / <span id="gTarget">15</span> min</small></div>
+          </div>
+          <button class="goaledit" id="goalEditBtn">Edit Goal</button>
+        </div>
+        <div class="goalbar"><div class="goalfill" id="goalFill" style="width:0%"></div></div>
+        <div class="goalsub"><span id="goalMsg">Read to start your day</span><span id="goalPct">0%</span></div>
+      </div>
+      <div class="streakrow">
+        <div class="streakcard"><span class="ico">🔥</span><div><div class="n" id="jstreak">0</div><div class="t">Current streak</div></div></div>
+        <div class="streakcard"><span class="ico">🏆</span><div><div class="n" id="jbest">0</div><div class="t">Best streak</div></div></div>
+      </div>
+
+      <div class="sec">Reading Calendar</div>
+      <div class="calcard">
+        <div class="calhead">
+          <h3 id="calTitle">June 2026</h3>
+          <div class="calnav">
+            <button id="calPrev">‹</button>
+            <button id="calNext">›</button>
+          </div>
+        </div>
+        <div class="calgrid" id="calGrid"></div>
+        <div class="callegend">
+          <span><span class="lgdot" style="background:var(--acc2)"></span>Read</span>
+          <span><span class="lgdot" style="background:var(--accent)"></span>Goal met</span>
+          <span><span class="lgdot" style="box-shadow:inset 0 0 0 2px var(--accent)"></span>Today</span>
+        </div>
+      </div>
+      <p style="font-size:11px;color:var(--sub);text-align:center;margin:-10px 0 22px;line-height:1.5">
+        Tap any day to view or add reading sessions —<br>carry over streaks from other apps.
+      </p>
+
+      <div class="sec">Books Finished</div>
+      <div id="timeline"></div>
+    </div>
+  </div>
+
+  <!-- ════════ STATS ════════ -->
   <div class="screen" id="stats">
     <div class="hdr"><h1>Stats</h1></div>
     <div class="sa">
@@ -294,9 +545,9 @@ input[type=file]{display:none}
           <div class="stsub">all time</div>
         </div>
         <div class="stcard">
-          <div class="stlbl">Completed</div>
+          <div class="stlbl">Finished</div>
           <div class="stval" id="sdone">0</div>
-          <div class="stsub">books finished</div>
+          <div class="stsub">books completed</div>
         </div>
         <div class="stcard">
           <div class="stlbl">Avg Session</div>
@@ -304,14 +555,16 @@ input[type=file]{display:none}
           <div class="stsub">per session</div>
         </div>
         <div class="stcard">
-          <div class="stlbl">Streak</div>
-          <div class="stval" id="sstr">0</div>
-          <div class="stsub">days in a row</div>
+          <div class="stlbl">This Week</div>
+          <div class="stval" id="sweek">0m</div>
+          <div class="stsub">last 7 days</div>
         </div>
       </div>
       <div class="chcard">
         <h3>Last 7 Days</h3>
-        <div class="bchart" id="chart"></div>
+        <div class="bchartwrap" id="chartwrap">
+          <div class="bchart" id="chart"></div>
+        </div>
       </div>
       <div class="ssec">
         <h3>Recent Sessions</h3>
@@ -320,7 +573,8 @@ input[type=file]{display:none}
     </div>
   </div>
 
-  <div id="reader">
+  <!-- ════════ READER ════════ -->
+  <div id="reader" class="t-paper">
     <div class="rtop">
       <button class="ibtn" id="rback">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
@@ -329,21 +583,27 @@ input[type=file]{display:none}
       </button>
       <div class="rtitle" id="rtitle"></div>
       <div class="rtimer" id="timer">0:00</div>
+      <button class="ibtn" id="bmBtn" title="Bookmark this page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round">
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+        </svg>
+      </button>
     </div>
     <div class="rbody">
       <div class="reader-status-top" id="sectionLeft"></div>
-      <div id="viewer"></div>
+      <div id="viewerWrap"><div id="viewer"></div></div>
+      <div id="brightOverlay"></div>
       <div class="tzone" id="tprev"></div>
       <div class="tzone" id="tmenu"></div>
       <div class="tzone" id="tnext"></div>
       <button class="menu-fab" id="menuFab" title="Menu">☰</button>
       <div class="reader-menu" id="readerMenu">
         <button class="menu-pill" id="contentsBtn"><span>Contents · <small id="menuPct">0%</small></span><span>☰</span></button>
-        <button class="menu-pill" id="settingsBtn"><span>Themes & Settings</span><span style="font-weight:800">Aᴀ</span></button>
+        <button class="menu-pill" id="settingsBtn"><span>Themes &amp; Settings</span><span style="font-weight:800">Aᴀ</span></button>
       </div>
       <div class="reader-status-bottom">
+        <div class="scrubwrap"><input type="range" id="scrub" min="0" max="1000" value="0"></div>
         <div id="pageStatus">Page 1</div>
-        <div class="reader-progress" id="readerProgress"><div class="reader-progress-fill" id="readerProgressFill"></div></div>
       </div>
       <div class="rload" id="rload">
         <div class="spin"></div>
@@ -351,23 +611,166 @@ input[type=file]{display:none}
       </div>
     </div>
 
+    <!-- Contents / Bookmarks -->
     <div class="sheet-backdrop" id="tocSheet">
       <div class="sheet">
-        <div class="sheet-head"><div style="width:46px"></div><div><div class="sheet-title">Contents</div><div class="sheet-sub" id="tocSub">Chapters</div></div><button class="sheet-close" data-close="tocSheet">✓</button></div>
-        <div class="toc-list" id="tocList"></div>
+        <div class="sheet-head"><div style="width:46px"></div><div style="flex:1"><div class="sheet-title">Contents</div></div><button class="sheet-close" data-close="tocSheet">✕</button></div>
+        <div class="toc-tabs">
+          <button class="toc-tab on" id="tabChapters">Chapters</button>
+          <button class="toc-tab" id="tabBookmarks">Bookmarks</button>
+        </div>
+        <div class="sheet-body">
+          <div class="toc-list" id="tocList"></div>
+          <div class="toc-list" id="bmList" style="display:none"></div>
+        </div>
       </div>
     </div>
 
+    <!-- Themes & Settings -->
     <div class="sheet-backdrop" id="settingsSheet">
       <div class="sheet">
-        <div class="sheet-head"><div style="width:46px"></div><div class="sheet-title">Themes & Settings</div><button class="sheet-close" data-close="settingsSheet">✓</button></div>
-        <div class="settings-group"><div class="setting-label">Text Size</div><div class="font-row"><button class="font-btn" id="fontDown">A−</button><div class="font-sample" id="fontSample">100%</div><button class="font-btn" id="fontUp">A+</button></div></div>
-        <div class="settings-group"><div class="setting-label">Theme</div><div class="theme-row"><button class="choice" data-theme="light">Light</button><button class="choice" data-theme="sepia">Sepia</button><button class="choice" data-theme="dark">Dark</button></div></div>
-        <div class="settings-group"><div class="toggle-row"><span>Swipe to turn pages</span><button class="switch" id="animSwitch" aria-label="Toggle swipe page turn"></button></div></div>
+        <div class="sheet-head"><div style="width:46px"></div><div class="sheet-title">Themes &amp; Settings</div><button class="sheet-close" data-close="settingsSheet">✕</button></div>
+        <div class="sheet-body">
+          <div class="settings-group">
+            <div class="brightness-row">
+              <span>🔅</span>
+              <input type="range" id="brightSlider" min="35" max="100" value="100">
+              <span>🔆</span>
+            </div>
+          </div>
+          <div class="settings-group">
+            <div class="setting-label">Text Size</div>
+            <div class="font-row">
+              <button class="font-btn" id="fontDown">A−</button>
+              <div class="font-sample" id="fontSample">100%</div>
+              <button class="font-btn" id="fontUp">A+</button>
+            </div>
+          </div>
+          <div class="settings-group">
+            <div class="setting-label">Font</div>
+            <div class="chiprow" id="fontChips"></div>
+            <div class="toggle-row" style="margin-top:12px"><span>Bold text</span><button class="switch" id="boldSwitch"></button></div>
+          </div>
+          <div class="settings-group">
+            <div class="setting-label">Theme</div>
+            <div class="theme-row" id="themeRow"></div>
+          </div>
+          <div class="settings-group">
+            <div class="setting-label">Line Spacing</div>
+            <div class="seg" id="lineSeg">
+              <button data-line="1.35">Compact</button>
+              <button data-line="1.6">Normal</button>
+              <button data-line="1.95">Relaxed</button>
+            </div>
+            <div class="setting-label" style="margin-top:14px">Margins</div>
+            <div class="seg" id="marginSeg">
+              <button data-margin="narrow">Narrow</button>
+              <button data-margin="normal">Normal</button>
+              <button data-margin="wide">Wide</button>
+            </div>
+            <div class="toggle-row" style="margin-top:14px"><span>Justify text</span><button class="switch" id="justifySwitch"></button></div>
+          </div>
+          <div class="settings-group">
+            <div class="setting-label">Layout</div>
+            <div class="seg" id="flowSeg">
+              <button data-flow="paginated">Pages</button>
+              <button data-flow="scrolled-doc">Vertical Scroll</button>
+            </div>
+            <div class="setting-label" style="margin-top:14px">Page Turn</div>
+            <div class="seg" id="animSeg">
+              <button data-anim="slide">Slide</button>
+              <button data-anim="fade">Fade</button>
+              <button data-anim="none">None</button>
+            </div>
+            <div class="toggle-row" style="margin-top:14px"><span>Swipe to turn pages</span><button class="switch" id="swipeSwitch"></button></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- ════════ APP SHEETS ════════ -->
+  <!-- Book action sheet -->
+  <div class="app-sheet-backdrop" id="bookSheet">
+    <div class="app-sheet">
+      <div class="grabber"></div>
+      <div class="as-title" id="bsTitle">Book</div>
+      <div class="as-sub" id="bsSub"></div>
+      <div class="as-group" id="bsActions"></div>
+      <div class="as-group"><button class="as-btn cancel" data-appclose="bookSheet">Cancel</button></div>
+    </div>
+  </div>
+
+  <!-- Finish date editor -->
+  <div class="app-sheet-backdrop" id="finishSheet">
+    <div class="app-sheet">
+      <div class="grabber"></div>
+      <div class="as-title" id="fsTitle">Mark as Finished</div>
+      <div class="as-sub">Set when you finished this book — backdate it if you finished it elsewhere.</div>
+      <div class="frm">
+        <label>Finished on</label>
+        <input type="datetime-local" id="fsDate">
+      </div>
+      <div class="btnrow">
+        <button class="ghost danger" id="fsUnfinish" style="display:none">Mark Unfinished</button>
+        <button class="ghost" data-appclose="finishSheet">Cancel</button>
+        <button class="ctabtn" id="fsSave">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Daily goal editor -->
+  <div class="app-sheet-backdrop" id="goalSheet">
+    <div class="app-sheet">
+      <div class="grabber"></div>
+      <div class="as-title">Daily Reading Goal</div>
+      <div class="as-sub">Days you meet this goal count toward your streak.</div>
+      <div class="goalchips" id="goalChips"></div>
+      <div class="frm">
+        <label>Custom (minutes per day)</label>
+        <input type="number" id="goalCustom" min="1" max="720" inputmode="numeric" placeholder="e.g. 25">
+      </div>
+      <div class="btnrow">
+        <button class="ghost" data-appclose="goalSheet">Cancel</button>
+        <button class="ctabtn" id="goalSave">Save Goal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day detail / manual session -->
+  <div class="app-sheet-backdrop" id="daySheet">
+    <div class="app-sheet">
+      <div class="grabber"></div>
+      <div class="as-title" id="dsTitle">Day</div>
+      <div class="daytotal" id="dsTotal"></div>
+      <div id="dsList"></div>
+      <div class="frm" id="dsForm">
+        <label>Add a reading session</label>
+        <select id="dsBook"></select>
+        <div class="row2">
+          <div><label>Minutes</label><input type="number" id="dsMins" min="1" max="720" inputmode="numeric" placeholder="20"></div>
+          <div><label>Start time</label><input type="time" id="dsTime" value="20:00"></div>
+        </div>
+      </div>
+      <div class="btnrow">
+        <button class="ghost" data-appclose="daySheet">Close</button>
+        <button class="ctabtn" id="dsAdd">Add Session</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Book details -->
+  <div class="app-sheet-backdrop" id="detailSheet">
+    <div class="app-sheet">
+      <div class="grabber"></div>
+      <div class="as-title" id="dtTitle"></div>
+      <div class="as-sub" id="dtAuthor"></div>
+      <div class="as-group" id="dtRows"></div>
+      <div class="as-group"><button class="as-btn cancel" data-appclose="detailSheet">Done</button></div>
+    </div>
+  </div>
+
+  <!-- ════════ NAV ════════ -->
   <nav class="bnav" id="bnav">
     <button class="nbtn active" data-s="lib">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -375,6 +778,13 @@ input[type=file]{display:none}
         <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
       </svg>
       Library
+    </button>
+    <button class="nbtn" data-s="journal">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <rect x="3" y="4" width="18" height="18" rx="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+      Journal
     </button>
     <button class="nbtn" data-s="stats">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -388,10 +798,10 @@ input[type=file]{display:none}
 </div>
 
 <script>
-const FOLIO_VERSION = 'v13-page-map';
+const FOLIO_VERSION = 'v14-reader-plus';
+const CHARS_PER_PAGE = 1800;   // ≈ Apple Books / print pagination density
 
 function dbg(msg) {}
-
 
 function getEpubFactory() {
   return window.ePub || window.EPUB || window.epub || null;
@@ -402,25 +812,18 @@ function makeEpubBook(input) {
   return factory(input);
 }
 
-// Browser fallback for metadata in Safari/Chrome.
+/* ── Storage layer ─────────────────────────────────────────────── */
 if (!window.storage) {
   window.storage = {
     async get(key) {
       const value = localStorage.getItem(key);
       return value === null ? null : { value };
     },
-    async set(key, value) {
-      localStorage.setItem(key, value);
-      return true;
-    },
-    async delete(key) {
-      localStorage.removeItem(key);
-      return true;
-    }
+    async set(key, value) { localStorage.setItem(key, value); return true; },
+    async delete(key) { localStorage.removeItem(key); return true; }
   };
 }
 
-// IndexedDB is used for full EPUB files because localStorage is too small.
 function openFolioDB() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open('folio_epub_db', 1);
@@ -460,36 +863,27 @@ async function idbDelete(key) {
   });
 }
 
+/* ── App state ─────────────────────────────────────────────────── */
+const DEFAULT_SETTINGS = {
+  theme:'paper', fontSize:100, font:'original', bold:false,
+  lineHeight:1.6, margins:'normal', justify:false,
+  flow:'paginated', pageAnim:'slide', swipe:true, brightness:100,
+};
 const A = {
-  books:    [],
-  sessions: [],
-  progress: {},
-  bookId: null,
-  epubBook: null,
-  rend: null,
-  timerInt: null,
-  elapsed: 0,
-  paused: false,
-  sessP0: 0,
-  readerSettings: { theme:'light', fontSize:100, animation:true },
+  books: [], sessions: [], progress: {}, bookmarks: {},
+  goal: { minutes: 15 },
+  readerSettings: Object.assign({}, DEFAULT_SETTINGS),
+  bookId: null, epubBook: null, rend: null,
+  timerInt: null, elapsed: 0, paused: false, sessP0: 0,
   toc: [],
-  currentPage: 1,
-  totalPages: 0,
-  currentPct: 0,
-  currentCfi: null,
-  pendingTurn: null,
-  suppressLocationPageUpdate: false,
-  pageMaps: {},
-  activePageMapKey: null,
-  activePageMap: null,
-  paginationRunning: false,
-  chapterLeft: '',
-  turningPage: false,
-  navDirection: null,
-  swipeX: 0,
-  swipeY: 0,
-  didSwipe: false,
-  chromeHideTmr: null,
+  currentPage: 1, totalPages: 0, currentPct: 0, currentCfi: null,
+  chapterLeft: '', turningPage: false,
+  swipeX: 0, swipeY: 0, didSwipe: false,
+  chromeHideTmr: null, themeCounter: 0,
+  locationsReady: false, scrubbing: false,
+  calY: new Date().getFullYear(), calM: new Date().getMonth(),
+  daySheetKey: null, finishBookId: null,
+  longPressTmr: null, longPressed: false,
 };
 
 async function persist() {
@@ -499,7 +893,8 @@ async function persist() {
     await window.storage.set('f_sessions', JSON.stringify(A.sessions));
     await window.storage.set('f_progress', JSON.stringify(A.progress));
     await window.storage.set('f_reader_settings', JSON.stringify(A.readerSettings));
-    await window.storage.set('f_page_maps', JSON.stringify(A.pageMaps));
+    await window.storage.set('f_goal',      JSON.stringify(A.goal));
+    await window.storage.set('f_bookmarks', JSON.stringify(A.bookmarks));
   } catch(e) {}
 }
 
@@ -509,46 +904,54 @@ async function hydrate() {
     try { const r = await window.storage.get(k); return r ? JSON.parse(r.value) : fb; }
     catch(e) { return fb; }
   };
-  A.books    = await get('f_books',    []);
-  A.sessions = await get('f_sessions', []);
-  A.progress = await get('f_progress', {});
-  A.readerSettings = Object.assign(A.readerSettings, await get('f_reader_settings', {}));
-  A.pageMaps = await get('f_page_maps', {});
+  A.books     = await get('f_books',     []);
+  A.sessions  = await get('f_sessions',  []);
+  A.progress  = await get('f_progress',  {});
+  A.goal      = Object.assign({minutes:15}, await get('f_goal', {}));
+  A.bookmarks = await get('f_bookmarks', {});
+  const saved = await get('f_reader_settings', {});
+  // Migrate old theme/setting names from v13 and earlier.
+  if (saved.theme === 'light') saved.theme = 'paper';
+  if (saved.theme === 'sepia') saved.theme = 'quiet';
+  if (saved.theme === 'dark')  saved.theme = 'focus';
+  if (typeof saved.animation === 'boolean' && typeof saved.swipe !== 'boolean') saved.swipe = saved.animation;
+  delete saved.animation;
+  A.readerSettings = Object.assign({}, DEFAULT_SETTINGS, saved);
+  // Books finished long ago by progress get a finished flag once.
+  A.books.forEach(b => {
+    if (!b.finished && (A.progress[b.id]?.pct || 0) >= 0.99) {
+      b.finished = true;
+      b.finishedAt = b.finishedAt || new Date(A.progress[b.id]?.lastRead || Date.now()).toISOString();
+    }
+  });
 }
 
 async function storeEpub(id, buf) {
-  try {
-    await idbSet(`f_epub_${id}`, buf);
-    return true;
-  } catch(e) {
-    console.error('EPUB IndexedDB store failed:', e);
-    return false;
-  }
+  try { await idbSet(`f_epub_${id}`, buf); return true; }
+  catch(e) { console.error('EPUB IndexedDB store failed:', e); return false; }
 }
 async function getEpub(id) {
   try {
     const v = await idbGet(`f_epub_${id}`);
     if (v) return v;
-
-    // Fallback for old localStorage/base64 saves.
     if (window.storage) {
       const r = await window.storage.get(`f_epub_${id}`);
       return r ? r.value : null;
     }
     return null;
-  } catch(e) {
-    console.error('EPUB load failed:', e);
-    return null;
-  }
+  } catch(e) { console.error('EPUB load failed:', e); return null; }
 }
 async function dropEpub(id) {
   try { await idbDelete(`f_epub_${id}`); } catch(e) {}
+  try { await idbDelete(`f_loc_${id}_cpp${CHARS_PER_PAGE}`); } catch(e) {}
   try { if (window.storage) await window.storage.delete(`f_epub_${id}`); } catch(e) {}
 }
 
+/* ── Tiny helpers ──────────────────────────────────────────────── */
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
 const esc = s => String(s||'')
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const nfmt = n => Number(n||0).toLocaleString();
 
 function fmt(secs) {
   secs = Math.floor(secs||0);
@@ -558,27 +961,43 @@ function fmt(secs) {
 }
 function fmtTimer(s) { return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }
 function fmtDate(iso) {
-  return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' · ' +
+         d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
 }
-
-let toastTmr;
+function fmtFinish(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) + ' · ' +
+         d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+}
+function dayKey(d) {
+  const x = (d instanceof Date) ? d : new Date(d);
+  return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;
+}
+function keyToDate(key) {
+  const [y,m,dd] = key.split('-').map(Number);
+  return new Date(y, m-1, dd);
+}
+function toLocalInput(d) {
+  const x = (d instanceof Date) ? d : new Date(d);
+  const p = n => String(n).padStart(2,'0');
+  return `${x.getFullYear()}-${p(x.getMonth()+1)}-${p(x.getDate())}T${p(x.getHours())}:${p(x.getMinutes())}`;
+}
+let toastTmr = null;
 function toast(msg, dur=2500) {
   const el = document.getElementById('toast');
   el.textContent = msg; el.classList.add('on');
   clearTimeout(toastTmr);
   toastTmr = setTimeout(() => el.classList.remove('on'), dur);
 }
-
 function ab2b64(buf) {
   const u8 = new Uint8Array(buf);
-  let out = '', chunk = 8192;
-  for (let i=0; i<u8.length; i+=chunk)
-    out += String.fromCharCode(...u8.subarray(i, i+chunk));
-  return btoa(out);
+  let s = ''; for (let i=0;i<u8.length;i++) s += String.fromCharCode(u8[i]);
+  return btoa(s);
 }
 function b642ab(b64) {
   const bin = atob(b64), u8 = new Uint8Array(bin.length);
-  for (let i=0; i<bin.length; i++) u8[i] = bin.charCodeAt(i);
+  for (let i=0;i<bin.length;i++) u8[i] = bin.charCodeAt(i);
   return u8.buffer;
 }
 function blob2b64(blob) {
@@ -587,124 +1006,250 @@ function blob2b64(blob) {
   });
 }
 
-function streak() {
-  if (!A.sessions.length) return 0;
-  const dates = new Set(A.sessions.map(s => new Date(s.start).toDateString()));
-  const today = new Date().toDateString();
-  const yday  = new Date(Date.now()-86400000).toDateString();
-  if (!dates.has(today) && !dates.has(yday)) return 0;
-  let n=0, d = dates.has(today) ? new Date() : new Date(Date.now()-86400000);
-  while (dates.has(d.toDateString())) { n++; d = new Date(d-86400000); }
+/* ── Goal + streak engine ──────────────────────────────────────── */
+function secsByDay() {
+  const map = {};
+  A.sessions.forEach(s => {
+    const k = dayKey(s.start);
+    map[k] = (map[k]||0) + (s.secs||0);
+  });
+  return map;
+}
+function goalMinutes() { return Math.max(1, A.goal.minutes||15); }
+function todaySecs() { return secsByDay()[dayKey(new Date())] || 0; }
+
+function currentStreak() {
+  const map = secsByDay(), need = goalMinutes()*60;
+  const met = k => (map[k]||0) >= need;
+  let cursor = new Date();
+  // A streak is still alive if today's goal isn't met yet but yesterday's was.
+  if (!met(dayKey(cursor))) cursor = new Date(cursor.getTime() - 86400000);
+  let n = 0;
+  while (met(dayKey(cursor))) { n++; cursor = new Date(cursor.getTime() - 86400000); }
   return n;
 }
+function bestStreak() {
+  const map = secsByDay(), need = goalMinutes()*60;
+  const days = Object.keys(map).filter(k => map[k] >= need).sort();
+  let best = 0, run = 0, prev = null;
+  days.forEach(k => {
+    if (prev !== null && (keyToDate(k) - keyToDate(prev)) === 86400000) run++;
+    else run = 1;
+    prev = k;
+    if (run > best) best = run;
+  });
+  return Math.max(best, currentStreak());
+}
 
+/* ── Navigation ────────────────────────────────────────────────── */
 function goto(sid) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(sid).classList.add('active');
   document.querySelectorAll('.nbtn').forEach(b =>
     b.classList.toggle('active', b.dataset.s === sid));
-  if (sid==='stats')   renderStats();
-  if (sid==='lib')     renderLib();
+  if (sid === 'journal') renderJournal();
+  if (sid === 'stats')   renderStats();
+  if (sid === 'lib')     renderLib();
 }
 document.querySelectorAll('.nbtn').forEach(b =>
   b.addEventListener('click', () => goto(b.dataset.s)));
 
+/* ── App sheets (bottom drawers outside the reader) ────────────── */
+function openAppSheet(id){ document.getElementById(id)?.classList.add('on'); }
+function closeAppSheet(id){ document.getElementById(id)?.classList.remove('on'); }
+document.querySelectorAll('[data-appclose]').forEach(b =>
+  b.addEventListener('click', () => closeAppSheet(b.dataset.appclose)));
+document.querySelectorAll('.app-sheet-backdrop').forEach(bg =>
+  bg.addEventListener('click', e => { if (e.target === bg) closeAppSheet(bg.id); }));
+
+/* ── Library ───────────────────────────────────────────────────── */
 const GRADS = [
-  'linear-gradient(135deg,#2D6A4F,#52B788)',
-  'linear-gradient(135deg,#1B4332,#40916C)',
-  'linear-gradient(135deg,#355E3B,#74C69D)',
-  'linear-gradient(135deg,#081C15,#1B4332)',
-  'linear-gradient(135deg,#6B9080,#A4C3B2)',
-  'linear-gradient(135deg,#4A7C59,#8FBC94)',
+  'linear-gradient(135deg,#2D6A4F,#52B788)','linear-gradient(135deg,#264653,#2A9D8F)',
+  'linear-gradient(135deg,#6D4C3D,#A98467)','linear-gradient(135deg,#3D405B,#81B29A)',
+  'linear-gradient(135deg,#5F0F40,#9A031E)','linear-gradient(135deg,#1D3557,#457B9D)',
 ];
 
 function renderLib() {
   const totalSecs = A.sessions.reduce((a,s)=>a+(s.secs||0),0);
   document.getElementById('mbooks').textContent  = A.books.length;
   document.getElementById('mtime').textContent   = fmt(totalSecs);
-  document.getElementById('mstreak').textContent = streak();
+  document.getElementById('mstreak').textContent = currentStreak();
 
   const grid = document.getElementById('bgrid');
   const empt = document.getElementById('empt');
   const sec  = document.getElementById('sectitle');
-
   if (!A.books.length) {
     grid.innerHTML=''; empt.style.display='flex'; sec.style.display='none'; return;
   }
   empt.style.display='none'; sec.style.display='block';
 
   const sorted = [...A.books].sort((a,b)=>
-    (A.progress[b.id]?.lastRead||0) - (A.progress[a.id]?.lastRead||0));
+    (A.progress[b.id]?.lastRead||0)-(A.progress[a.id]?.lastRead||0));
 
   grid.innerHTML = sorted.map(bk => {
     const prog = A.progress[bk.id]||{};
     const pct  = Math.round((prog.pct||0)*100);
-    const stat = pct===0?'Not started':pct>=99?'✓ Finished':`${pct}%`;
+    const stat = bk.finished ? 'Finished' : pct===0 ? 'Not started' : `${pct}%`;
     const grad = GRADS[bk.id.charCodeAt(0)%GRADS.length];
     const cov  = bk.cover
       ? `<img class="bcover" src="${bk.cover}" alt="">`
       : `<div class="bph" style="background:${grad}">📖</div>`;
     return `<div class="bcard" data-id="${bk.id}">
-      <div class="bcwrap">${cov}</div>
-      <button class="delbtn" data-id="${bk.id}">✕</button>
+      <div class="bcwrap">${cov}
+        ${bk.finished?'<span class="fbadge">✓ Read</span>':''}
+        <button class="morebtn" data-id="${bk.id}" title="More">⋯</button>
+      </div>
       <div class="bbody">
         <div class="btitle">${esc(bk.title)}</div>
-        <div class="bauth">${esc(bk.author||'Unknown')}</div>
+        <div class="bauth">${esc(bk.author)}</div>
         <div class="pt"><div class="pf" style="width:${pct}%"></div></div>
         <div class="pl">${stat}</div>
       </div>
     </div>`;
   }).join('');
 
-  grid.querySelectorAll('.bcard').forEach(el =>
+  grid.querySelectorAll('.bcard').forEach(el => {
     el.addEventListener('click', e => {
-      if (e.target.closest('.delbtn')) return;
+      if (e.target.closest('.morebtn')) return;
+      if (A.longPressed) { A.longPressed = false; return; }
       openReader(el.dataset.id);
-    }));
-  grid.querySelectorAll('.delbtn').forEach(b =>
-    b.addEventListener('click', e => { e.stopPropagation(); removeBook(b.dataset.id); }));
+    });
+    el.addEventListener('contextmenu', e => { e.preventDefault(); openBookSheet(el.dataset.id); });
+    el.addEventListener('touchstart', e => {
+      clearTimeout(A.longPressTmr);
+      A.longPressed = false;
+      const t = e.touches[0];
+      const sx = t.clientX, sy = t.clientY;
+      const move = ev => {
+        const tt = ev.touches[0];
+        if (Math.abs(tt.clientX-sx) > 10 || Math.abs(tt.clientY-sy) > 10) cancel();
+      };
+      const cancel = () => {
+        clearTimeout(A.longPressTmr);
+        el.removeEventListener('touchmove', move);
+        el.removeEventListener('touchend', cancel);
+        el.removeEventListener('touchcancel', cancel);
+      };
+      el.addEventListener('touchmove', move, {passive:true});
+      el.addEventListener('touchend', cancel, {passive:true});
+      el.addEventListener('touchcancel', cancel, {passive:true});
+      A.longPressTmr = setTimeout(() => {
+        A.longPressed = true;
+        cancel();
+        if (navigator.vibrate) navigator.vibrate(12);
+        openBookSheet(el.dataset.id);
+      }, 480);
+    }, {passive:true});
+  });
+  grid.querySelectorAll('.morebtn').forEach(b =>
+    b.addEventListener('click', e => { e.stopPropagation(); openBookSheet(b.dataset.id); }));
 }
 
 async function removeBook(id) {
-  if (!confirm('Remove this book? Your reading history will be kept.')) return;
+  if (!confirm('Remove this book from your library? Reading sessions are kept.')) return;
   A.books = A.books.filter(b=>b.id!==id);
+  delete A.progress[id];
+  delete A.bookmarks[id];
   await dropEpub(id);
   await persist();
   renderLib();
   toast('Book removed');
 }
 
+/* ── Book action sheet / finished flow ─────────────────────────── */
+function openBookSheet(id) {
+  const bk = A.books.find(b=>b.id===id); if (!bk) return;
+  const prog = A.progress[id]||{};
+  document.getElementById('bsTitle').textContent = bk.title;
+  document.getElementById('bsSub').textContent   = bk.author || '';
+  const acts = document.getElementById('bsActions');
+  acts.innerHTML = `
+    <button class="as-btn" data-act="read"><span class="aico">📖</span>Continue Reading</button>
+    ${bk.finished
+      ? `<button class="as-btn" data-act="editfinish"><span class="aico">🗓️</span>Edit Finish Date</button>`
+      : `<button class="as-btn" data-act="finish"><span class="aico">✅</span>Mark as Finished</button>`}
+    <button class="as-btn" data-act="details"><span class="aico">ℹ️</span>Book Details</button>
+    <button class="as-btn danger" data-act="remove"><span class="aico">🗑️</span>Remove from Library</button>`;
+  acts.querySelectorAll('.as-btn').forEach(b => b.addEventListener('click', () => {
+    closeAppSheet('bookSheet');
+    const act = b.dataset.act;
+    if (act === 'read')    openReader(id);
+    if (act === 'remove')  removeBook(id);
+    if (act === 'details') openDetails(id);
+    if (act === 'finish' || act === 'editfinish') openFinishSheet(id);
+  }));
+  openAppSheet('bookSheet');
+}
+
+function openFinishSheet(id) {
+  const bk = A.books.find(b=>b.id===id); if (!bk) return;
+  A.finishBookId = id;
+  document.getElementById('fsTitle').textContent = bk.finished ? 'Edit Finish Date' : 'Mark as Finished';
+  document.getElementById('fsDate').value = toLocalInput(bk.finishedAt ? new Date(bk.finishedAt) : new Date());
+  document.getElementById('fsUnfinish').style.display = bk.finished ? 'block' : 'none';
+  openAppSheet('finishSheet');
+}
+document.getElementById('fsSave').addEventListener('click', async () => {
+  const bk = A.books.find(b=>b.id===A.finishBookId); if (!bk) return;
+  const v = document.getElementById('fsDate').value;
+  const when = v ? new Date(v) : new Date();
+  bk.finished = true;
+  bk.finishedAt = when.toISOString();
+  await persist();
+  closeAppSheet('finishSheet');
+  renderLib(); renderJournal(); renderStats();
+  toast(`Finished · ${when.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`);
+});
+document.getElementById('fsUnfinish').addEventListener('click', async () => {
+  const bk = A.books.find(b=>b.id===A.finishBookId); if (!bk) return;
+  bk.finished = false; delete bk.finishedAt;
+  await persist();
+  closeAppSheet('finishSheet');
+  renderLib(); renderJournal(); renderStats();
+  toast('Marked unfinished');
+});
+
+function openDetails(id) {
+  const bk = A.books.find(b=>b.id===id); if (!bk) return;
+  const prog = A.progress[id]||{};
+  const secs = A.sessions.filter(s=>s.bookId===id).reduce((a,s)=>a+(s.secs||0),0);
+  const sess = A.sessions.filter(s=>s.bookId===id).length;
+  document.getElementById('dtTitle').textContent  = bk.title;
+  document.getElementById('dtAuthor').textContent = bk.author || '';
+  const row = (l,v) => `<div class="as-btn" style="cursor:default;justify-content:space-between">
+    <span style="color:var(--sub);font-weight:600">${l}</span><span style="font-weight:700">${v}</span></div>`;
+  document.getElementById('dtRows').innerHTML =
+    row('Progress', `${Math.round((prog.pct||0)*100)}%`) +
+    row('Time read', fmt(secs)) +
+    row('Sessions', sess) +
+    row('Added', new Date(bk.added).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})) +
+    (bk.finished ? row('Finished', fmtFinish(bk.finishedAt)) : '');
+  openAppSheet('detailSheet');
+}
+
+/* ── Import ────────────────────────────────────────────────────── */
 const fi = document.getElementById('fi');
 document.getElementById('addbtn').addEventListener('click', ()=>fi.click());
 document.getElementById('emptadd').addEventListener('click', ()=>fi.click());
 
 fi.addEventListener('change', async e => {
-  const file = e.target.files[0]; if (!file) { dbg('No file selected'); return; }
-  dbg('Selected file: ' + file.name + ' · ' + Math.round(file.size/1024/1024*10)/10 + ' MB');
-  e.target.value='';
+  const file = e.target.files[0]; if (!file) return;
   const reopen = fi.dataset.reopen; fi.removeAttribute('data-reopen');
   const id = await ingest(file, reopen||null);
+  fi.value='';
   if (id && reopen) openReader(id);
 });
 
 async function ingest(file, existId=null) {
-  dbg('Starting ingest');
-  dbg('Globals: JSZip=' + typeof window.JSZip + ', ePub=' + typeof window.ePub + ', EPUB=' + typeof window.EPUB + ', epub=' + typeof window.epub);
-  if (!getEpubFactory()) {
-    toast('Library not loaded yet — please wait a moment', 3500); return null;
-  }
-  toast('Reading file…');
+  toast('Importing…', 6000);
   return new Promise(res => {
     const fr = new FileReader();
     fr.onload = async evt => {
       const buf = evt.target.result;
       try {
         const bk = makeEpubBook(buf.slice(0));
-        dbg('EPUB object created');
         await bk.ready;
-        dbg('EPUB ready');
         const meta   = await bk.loaded.metadata;
-        dbg('Metadata loaded: ' + (meta.title || file.name));
         const title  = meta.title  || file.name.replace(/\.epub$/i,'');
         const author = meta.creator || 'Unknown Author';
         let cover = null;
@@ -712,28 +1257,22 @@ async function ingest(file, existId=null) {
           const url = await bk.coverUrl();
           if (url) { const r = await fetch(url); cover = await blob2b64(await r.blob()); }
         } catch(_) {}
-        bk.destroy();
-
         const id    = existId||uid();
         const exist = A.books.find(b=>b.id===id);
-        const entry = { id, title, author, cover, added: exist?.added||new Date().toISOString() };
+        const entry = { id, title, author, cover,
+          added: exist?.added||new Date().toISOString(),
+          finished: exist?.finished||false, finishedAt: exist?.finishedAt };
         A.books = A.books.filter(b=>b.id!==id);
         A.books.push(entry);
-
-        dbg('Saving EPUB to IndexedDB...');
         const ok = await storeEpub(id, buf);
-        dbg('IndexedDB save result: ' + ok);
-        if (!ok) toast('Could not save EPUB. Try clearing Safari website data and re-uploading.', 5000);
-
-        dbg('Saving metadata...');
-        await persist(); renderLib();
-        dbg('Library rendered');
-        toast(`"${title}" added!`);
+        try { bk.destroy(); } catch(_) {}
+        await persist();
+        renderLib();
+        toast(ok ? `Added "${title}"` : `Added "${title}" (storage limited)`);
         res(id);
       } catch(err) {
-        console.error(err);
-        dbg('Ingest failed: ' + (err && (err.message || err.name) || err));
-        toast('Could not read this EPUB file');
+        console.error('Import failed:', err);
+        toast('Import failed — is this a valid EPUB?');
         res(null);
       }
     };
@@ -741,328 +1280,825 @@ async function ingest(file, existId=null) {
   });
 }
 
-
-function themeColors(theme=A.readerSettings.theme){
-  if(theme==='dark') return {bg:'#050505',fg:'#F5F5F7',link:'#BFD7FF'};
-  if(theme==='sepia') return {bg:'#F2E8D5',fg:'#251A10',link:'#6B4E2E'};
-  return {bg:'#FBF8F2',fg:'#1A1A1A',link:'#2D6A4F'};
-}
-function updateReaderThemeClass(){
-  const r=document.getElementById('reader'); if(!r) return;
-  r.classList.remove('light','dark','sepia'); r.classList.add(A.readerSettings.theme||'light');
-  const c=themeColors(); document.documentElement.style.setProperty('--read-bg',c.bg);
-  document.body.classList.toggle('reader-open',r.classList.contains('active'));
-  if(r.classList.contains('active')) document.body.style.background=c.bg;
-}
-function applyReaderSettings(){
-  updateReaderThemeClass();
-  const pct=A.readerSettings.fontSize||100;
-  document.getElementById('fontSample')?.replaceChildren(document.createTextNode(`${pct}%`));
-  document.querySelectorAll('[data-theme]').forEach(b=>b.classList.toggle('on',b.dataset.theme===A.readerSettings.theme));
-  document.getElementById('animSwitch')?.classList.toggle('on',!!A.readerSettings.animation);
-  if(!A.rend) return;
-  const c=themeColors();
-  try{
-    A.rend.themes.register('folioDynamic',{html:{background:`${c.bg} !important`},body:{background:`${c.bg} !important`,color:`${c.fg} !important`},'p,div,span,section,article,li,blockquote':{color:`${c.fg} !important`},'h1,h2,h3,h4,h5,h6':{color:`${c.fg} !important`},a:{color:`${c.link} !important`}});
-    A.rend.themes.select('folioDynamic'); A.rend.themes.fontSize(`${pct}%`);
-    A.rend.views().forEach(v=>{try{v.document.documentElement.style.background=c.bg;v.document.body.style.background=c.bg;v.document.body.style.color=c.fg;}catch(_){}});
-  }catch(e){console.error(e)}
-}
-function updatePageStatus(showDetails=document.getElementById('reader')?.classList.contains('chrome')){
-  const pct=Math.round((A.currentPct||0)*100), cur=Math.max(1,Math.round(A.currentPage||1)), total=Math.round(A.totalPages||0);
-  const bottom=document.getElementById('pageStatus'), top=document.getElementById('sectionLeft'), fill=document.getElementById('readerProgressFill'), mp=document.getElementById('menuPct');
-  if(bottom) bottom.textContent=(showDetails&&total)?`Page ${cur} of ${Math.max(total,cur)} · ${pct}%`:`Page ${cur}`;
-  if(fill) fill.style.width=`${Math.max(0,Math.min(100,pct))}%`;
-  if(top) top.textContent=showDetails?(A.chapterLeft||''):'';
-  if(mp) mp.textContent=`${pct}%`;
+/* ── Journal: goal card ────────────────────────────────────────── */
+function renderGoal() {
+  const goal = goalMinutes();
+  const mins = Math.floor(todaySecs()/60);
+  const pct  = Math.min(100, Math.round((mins/goal)*100));
+  document.getElementById('gToday').textContent  = mins;
+  document.getElementById('gTarget').textContent = goal;
+  const fill = document.getElementById('goalFill');
+  fill.style.width = pct + '%';
+  fill.classList.toggle('met', mins >= goal);
+  document.getElementById('goalPct').textContent = pct + '%';
+  const msg = document.getElementById('goalMsg');
+  if (mins >= goal)      msg.textContent = `Goal met — streak day ${currentStreak()} 🔥`;
+  else if (mins > 0)     msg.textContent = `${goal-mins} min to go`;
+  else                   msg.textContent = 'Read to keep your streak alive';
+  document.getElementById('jstreak').textContent = currentStreak();
+  document.getElementById('jbest').textContent   = bestStreak();
 }
 
-function getReaderLayoutKey(bookId){
-  const v = document.getElementById('viewer');
-  const w = Math.round(v?.clientWidth || window.innerWidth || 0);
-  const h = Math.round(v?.clientHeight || window.innerHeight || 0);
-  const fs = A.readerSettings.fontSize || 100;
-  const theme = A.readerSettings.theme || 'light';
-  return `${bookId}|w${w}|h${h}|fs${fs}|${theme}`;
-}
-function updatePaginationBadge(text, on=true){
-  const el = document.getElementById('paginationBadge');
-  if(!el) return;
-  el.textContent = text;
-  el.classList.toggle('on', !!on);
-}
-function getCfiFromLocation(loc){
-  const start = getLocationStart(loc);
-  return start?.cfi || null;
-}
-function pageFromMapByCfi(cfi){
-  const map = A.activePageMap;
-  if(!map?.pages?.length || !cfi || !A.epubBook) return null;
-  let best = 1;
-  for (let i=0;i<map.pages.length;i++){
-    const pcfi = map.pages[i].cfi;
-    try{
-      if(A.epubBook.locations?.epubcfi?.compare){
-        // Not usually exposed; fallback below.
-      }
-    }catch(_){}
-    try{
-      // ePubCFI comparison is available on the global ePub factory in some builds.
-      const cmp = new ePub.CFI(pcfi).compare(new ePub.CFI(cfi));
-      if(cmp <= 0) best = map.pages[i].page;
-      else break;
-    }catch(_){
-      // Fallback: exact match only.
-      if(pcfi === cfi) return map.pages[i].page;
-    }
+const GOAL_PRESETS = [5,10,15,20,30,45,60,90];
+document.getElementById('goalEditBtn').addEventListener('click', () => {
+  const chips = document.getElementById('goalChips');
+  chips.innerHTML = GOAL_PRESETS.map(m =>
+    `<button class="gchip${m===goalMinutes()?' on':''}" data-m="${m}">${m}m</button>`).join('');
+  chips.querySelectorAll('.gchip').forEach(c => c.addEventListener('click', () => {
+    chips.querySelectorAll('.gchip').forEach(x=>x.classList.remove('on'));
+    c.classList.add('on');
+    document.getElementById('goalCustom').value = '';
+  }));
+  document.getElementById('goalCustom').value =
+    GOAL_PRESETS.includes(goalMinutes()) ? '' : goalMinutes();
+  openAppSheet('goalSheet');
+});
+document.getElementById('goalSave').addEventListener('click', async () => {
+  const custom = parseInt(document.getElementById('goalCustom').value, 10);
+  const chip = document.querySelector('#goalChips .gchip.on');
+  const m = (custom && custom > 0) ? custom : chip ? parseInt(chip.dataset.m,10) : goalMinutes();
+  A.goal.minutes = Math.min(720, Math.max(1, m));
+  await persist();
+  closeAppSheet('goalSheet');
+  renderJournal(); renderStats(); renderLib();
+  toast(`Daily goal: ${A.goal.minutes} minutes`);
+});
+
+/* ── Journal: calendar ─────────────────────────────────────────── */
+function renderCalendar() {
+  const y = A.calY, m = A.calM;
+  const monthName = new Date(y, m, 1).toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  document.getElementById('calTitle').textContent = monthName;
+  const now = new Date();
+  document.getElementById('calNext').disabled =
+    (y > now.getFullYear()) || (y === now.getFullYear() && m >= now.getMonth());
+
+  const map = secsByDay(), need = goalMinutes()*60;
+  const first = new Date(y, m, 1);
+  const startDow = first.getDay();
+  const dim = new Date(y, m+1, 0).getDate();
+  const todayKey = dayKey(now);
+
+  let html = ['S','M','T','W','T','F','S'].map(d=>`<div class="caldow">${d}</div>`).join('');
+  for (let i=0;i<startDow;i++) html += `<button class="calday out"></button>`;
+  for (let d=1; d<=dim; d++) {
+    const k = dayKey(new Date(y,m,d));
+    const secs = map[k]||0;
+    const future = keyToDate(k) > now;
+    const cls = ['calday'];
+    if (future) cls.push('future');
+    else if (secs >= need) cls.push('met');
+    else if (secs > 0) cls.push('read');
+    if (k === todayKey) cls.push('today');
+    html += `<button class="${cls.join(' ')}" data-k="${k}" ${future?'disabled':''}>
+      <span>${d}</span><span class="dot"></span></button>`;
   }
-  return best;
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = html;
+  grid.querySelectorAll('.calday[data-k]').forEach(b =>
+    b.addEventListener('click', () => openDaySheet(b.dataset.k)));
 }
-function setPageFromActiveMap(loc){
-  const cfi = getCfiFromLocation(loc);
-  const mapped = pageFromMapByCfi(cfi);
-  if(mapped) A.currentPage = mapped;
-  if(A.activePageMap?.totalPages) A.totalPages = A.activePageMap.totalPages;
-  updateLocationMeta(loc);
-  updatePageStatus();
-}
-async function buildScreenPageMap(bookId, startCfi){
-  if(!A.epubBook || !A.rend || A.paginationRunning) return;
-  const key = getReaderLayoutKey(bookId);
-  A.activePageMapKey = key;
+document.getElementById('calPrev').addEventListener('click', () => {
+  A.calM--; if (A.calM < 0) { A.calM = 11; A.calY--; }
+  renderCalendar();
+});
+document.getElementById('calNext').addEventListener('click', () => {
+  A.calM++; if (A.calM > 11) { A.calM = 0; A.calY++; }
+  renderCalendar();
+});
 
-  const existing = A.pageMaps[key];
-  if(existing?.pages?.length && existing?.totalPages){
-    A.activePageMap = existing;
-    A.totalPages = existing.totalPages;
-    const loc = A.rend.currentLocation?.();
-    if(loc) setPageFromActiveMap(loc);
+/* ── Journal: day sheet (view + manual sessions) ───────────────── */
+function openDaySheet(k) {
+  A.daySheetKey = k;
+  const d = keyToDate(k);
+  document.getElementById('dsTitle').textContent =
+    d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  const sel = document.getElementById('dsBook');
+  sel.innerHTML = `<option value="">No specific book</option>` +
+    A.books.map(b=>`<option value="${b.id}">${esc(b.title)}</option>`).join('');
+  document.getElementById('dsMins').value = '';
+  document.getElementById('dsTime').value = (k === dayKey(new Date()))
+    ? new Date().toTimeString().slice(0,5) : '20:00';
+  renderDaySessions();
+  openAppSheet('daySheet');
+}
+function renderDaySessions() {
+  const k = A.daySheetKey;
+  const list = document.getElementById('dsList');
+  const todays = A.sessions
+    .filter(s => dayKey(s.start) === k)
+    .sort((a,b)=>new Date(a.start)-new Date(b.start));
+  const total = todays.reduce((a,s)=>a+(s.secs||0),0);
+  const goal = goalMinutes();
+  const mins = Math.floor(total/60);
+  document.getElementById('dsTotal').innerHTML =
+    `<b>${mins} min</b> read · goal ${goal} min ${mins>=goal?'· ✅ goal met':''}`;
+  if (!todays.length) {
+    list.innerHTML = `<div class="nodata" style="padding:14px">No reading logged this day.</div>`;
     return;
   }
-
-  A.paginationRunning = true;
-  updatePaginationBadge('Calculating pages…', true);
-
-  let originalCfi = startCfi;
-  try{
-    originalCfi = originalCfi || getCfiFromLocation(A.rend.currentLocation?.());
-  }catch(_){}
-
-  const map = {
-    key,
-    bookId,
-    fontSize:A.readerSettings.fontSize || 100,
-    width:Math.round(document.getElementById('viewer')?.clientWidth || window.innerWidth || 0),
-    height:Math.round(document.getElementById('viewer')?.clientHeight || window.innerHeight || 0),
-    created:Date.now(),
-    pages:[]
-  };
-
-  try{
-    await A.rend.display();
-    await new Promise(r=>setTimeout(r,80));
-
-    let lastCfi = null;
-    let guard = 0;
-
-    while(guard < 20000){
-      guard++;
-      const loc = A.rend.currentLocation?.();
-      const cfi = getCfiFromLocation(loc);
-      if(!cfi || cfi === lastCfi) break;
-
-      map.pages.push({page:map.pages.length+1, cfi});
-      lastCfi = cfi;
-
-      if(map.pages.length % 50 === 0){
-        updatePaginationBadge(`Calculating pages… ${map.pages.length}`, true);
-        await persist();
-        await new Promise(r=>setTimeout(r,0));
-      }
-
-      await A.rend.next();
-      await new Promise(r=>setTimeout(r,8));
-    }
-
-    map.totalPages = map.pages.length || 1;
-    A.pageMaps[key] = map;
-    A.activePageMap = map;
-    A.totalPages = map.totalPages;
+  list.innerHTML = todays.map(s => `
+    <div class="dsess">
+      <div class="sdot${s.manual?' manual':''}"></div>
+      <div class="sinf">
+        <div class="sbook">${esc(s.bookTitle||'Reading session')}</div>
+        <div class="smeta">${new Date(s.start).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}${s.manual?' · added manually':''}</div>
+      </div>
+      <div class="sdur">${fmt(s.secs)}</div>
+      <button class="sdel" data-sid="${s.id}" title="Delete">✕</button>
+    </div>`).join('');
+  list.querySelectorAll('.sdel').forEach(b => b.addEventListener('click', async () => {
+    if (!confirm('Delete this reading session?')) return;
+    A.sessions = A.sessions.filter(s=>s.id!==b.dataset.sid);
     await persist();
+    renderDaySessions(); renderJournal(); renderStats(); renderLib();
+  }));
+}
+document.getElementById('dsAdd').addEventListener('click', async () => {
+  const mins = parseInt(document.getElementById('dsMins').value, 10);
+  if (!mins || mins < 1) { toast('Enter how many minutes you read'); return; }
+  const time = document.getElementById('dsTime').value || '20:00';
+  const bookId = document.getElementById('dsBook').value || null;
+  const bk = bookId ? A.books.find(b=>b.id===bookId) : null;
+  const [hh,mm] = time.split(':').map(Number);
+  const d = keyToDate(A.daySheetKey);
+  d.setHours(hh||0, mm||0, 0, 0);
+  if (d > new Date()) { toast("Can't log reading in the future"); return; }
+  const secs = Math.min(720, mins) * 60;
+  A.sessions.push({
+    id: uid(), manual: true,
+    bookId, bookTitle: bk?.title || 'Manual entry',
+    start: d.toISOString(),
+    end: new Date(d.getTime()+secs*1000).toISOString(),
+    secs, p0: 0, p1: 0,
+  });
+  await persist();
+  document.getElementById('dsMins').value = '';
+  renderDaySessions(); renderJournal(); renderStats(); renderLib();
+  toast(`Added ${mins} min on ${d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}`);
+});
 
-    updatePaginationBadge(`Pages calculated: ${map.totalPages}`, true);
-    setTimeout(()=>updatePaginationBadge('', false), 1500);
-  }catch(e){
-    console.error('Pagination failed:', e);
-    updatePaginationBadge('Page calculation failed', true);
-    setTimeout(()=>updatePaginationBadge('', false), 2500);
-  }finally{
-    try{
-      if(originalCfi) await A.rend.display(originalCfi);
-      await new Promise(r=>setTimeout(r,120));
-      const loc = A.rend.currentLocation?.();
-      if(loc) setPageFromActiveMap(loc);
-    }catch(e){ console.error(e); }
-    A.paginationRunning = false;
+/* ── Journal: finished-books timeline ──────────────────────────── */
+function renderTimeline() {
+  const wrap = document.getElementById('timeline');
+  const done = A.books.filter(b=>b.finished && b.finishedAt)
+    .sort((a,b)=>new Date(b.finishedAt)-new Date(a.finishedAt));
+  if (!done.length) {
+    wrap.innerHTML = `<div class="nodata">No finished books yet.<br>
+      Press and hold a book in your library to mark it as finished —<br>you can backdate books you read elsewhere.</div>`;
+    return;
   }
-}
-function invalidateActivePageMap(){
-  A.activePageMap = null;
-  A.activePageMapKey = null;
-  A.totalPages = 0;
+  const byYear = {};
+  done.forEach(b => {
+    const y = new Date(b.finishedAt).getFullYear();
+    (byYear[y] = byYear[y]||[]).push(b);
+  });
+  wrap.innerHTML = Object.keys(byYear).sort((a,b)=>b-a).map(y => {
+    const items = byYear[y];
+    return `<div class="tlyear"><h3>${y}</h3><span>${items.length} book${items.length===1?'':'s'}</span></div>
+      <div class="tlwrap">` + items.map(b => {
+        const cov = b.cover ? `<img src="${b.cover}" alt="">` : '📕';
+        return `<div class="tlrow" data-id="${b.id}">
+          <div class="tlcov">${cov}</div>
+          <div class="tlinf">
+            <div class="tltitle">${esc(b.title)}</div>
+            <div class="tldate">Finished ${fmtFinish(b.finishedAt)}</div>
+          </div>
+          <span class="tledit">›</span>
+        </div>`;
+      }).join('') + `</div>`;
+  }).join('');
+  wrap.querySelectorAll('.tlrow').forEach(r =>
+    r.addEventListener('click', () => openFinishSheet(r.dataset.id)));
 }
 
-function getLocationStart(loc){
+function renderJournal() {
+  renderGoal();
+  renderCalendar();
+  renderTimeline();
+}
+
+/* ── Stats ─────────────────────────────────────────────────────── */
+function renderStats() {
+  const total = A.sessions.reduce((a,s)=>a+(s.secs||0),0);
+  const avg   = A.sessions.length ? total/A.sessions.length : 0;
+  const done  = A.books.filter(b=>b.finished).length;
+  const weekAgo = Date.now()-7*86400000;
+  const week  = A.sessions.filter(s=>new Date(s.start)>=weekAgo)
+    .reduce((a,s)=>a+(s.secs||0),0);
+  document.getElementById('stot').textContent  = fmt(total);
+  document.getElementById('sdone').textContent = done;
+  document.getElementById('savg').textContent  = fmt(avg);
+  document.getElementById('sweek').textContent = fmt(week);
+  renderChart(); renderSessions();
+}
+
+function renderChart() {
+  const chart = document.getElementById('chart');
+  const wrap  = document.getElementById('chartwrap');
+  const goal  = goalMinutes();
+  const map = secsByDay();
+  const days = [];
+  for (let i=6; i>=0; i--) {
+    const d = new Date(Date.now()-i*86400000);
+    const mins = Math.round((map[dayKey(d)]||0)/60);
+    days.push({ mins, today:i===0, met:mins>=goal,
+      lbl: i===0?'Today':d.toLocaleDateString('en-US',{weekday:'short'}) });
+  }
+  const max = Math.max(...days.map(d=>d.mins), goal, 1);
+  chart.innerHTML = days.map(d=>{
+    const h   = d.mins===0 ? 3 : Math.max(4,Math.round((d.mins/max)*72));
+    const cls = d.mins===0?'bar zero':`bar${d.met?' met':''}${d.today?' today':''}`;
+    return `<div class="bcol" title="${d.mins} min">
+      <div class="${cls}" style="height:${h}px"></div>
+      <div class="blbl">${d.lbl}</div>
+    </div>`;
+  }).join('');
+  // Dashed goal line over the bars
+  wrap.querySelector('.goal-line')?.remove();
+  const gl = document.createElement('div');
+  gl.className = 'goal-line';
+  const bottom = 14 + Math.round((goal/max)*72);   // 14px label row below bars
+  gl.style.bottom = bottom + 'px';
+  gl.innerHTML = `<span>${goal}m goal</span>`;
+  wrap.appendChild(gl);
+}
+
+function renderSessions() {
+  const list   = document.getElementById('slist');
+  const recent = [...A.sessions]
+    .sort((a,b)=>new Date(b.start)-new Date(a.start)).slice(0,25);
+  if (!recent.length) {
+    list.innerHTML='<div class="nodata">No sessions yet.<br>Open a book to start reading!</div>';
+    return;
+  }
+  list.innerHTML = recent.map(s=>{
+    const delta = Math.round(((s.p1||0)-(s.p0||0))*100);
+    const extra = s.manual ? 'added manually' : (delta>0 ? `+${delta}% progress` : 'session');
+    return `<div class="srow">
+      <div class="sdot${s.manual?' manual':''}"></div>
+      <div class="sinf">
+        <div class="sbook">${esc(s.bookTitle)}</div>
+        <div class="smeta">${fmtDate(s.start)} · ${extra}</div>
+      </div>
+      <div class="sdur">${fmt(s.secs)}</div>
+      <button class="sdel" data-sid="${s.id}" title="Delete">✕</button>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.sdel').forEach(b => b.addEventListener('click', async () => {
+    if (!confirm('Delete this reading session?')) return;
+    A.sessions = A.sessions.filter(s=>s.id!==b.dataset.sid);
+    await persist();
+    renderStats(); renderLib();
+  }));
+}
+
+/* ════════════════════ READER ENGINE ════════════════════ */
+
+const THEMES = [
+  { id:'original', label:'Original', bg:'#FFFFFF', fg:'#1A1A1A', link:'#0B57D0' },
+  { id:'quiet',    label:'Quiet',    bg:'#F2E8D5', fg:'#3D2E1E', link:'#7A5C2E' },
+  { id:'paper',    label:'Paper',    bg:'#FBF8F2', fg:'#1A1A1A', link:'#2D6A4F' },
+  { id:'calm',     label:'Calm',     bg:'#E8EBEF', fg:'#2B3440', link:'#3E5C8A' },
+  { id:'focus',    label:'Focus',    bg:'#23252A', fg:'#E8E8EC', link:'#9DB8E8' },
+  { id:'night',    label:'Night',    bg:'#000000', fg:'#D9D9DE', link:'#8FA8D8' },
+];
+const FONTS = [
+  { id:'original', label:'Original',  css:null },
+  { id:'georgia',  label:'Georgia',   css:'Georgia, "Times New Roman", serif' },
+  { id:'palatino', label:'Palatino',  css:'"Palatino Linotype", Palatino, "Book Antiqua", "URW Palladio L", serif' },
+  { id:'charter',  label:'Charter',   css:'Charter, "Iowan Old Style", "Bitstream Charter", Georgia, serif' },
+  { id:'times',    label:'Times',     css:'"Times New Roman", Times, serif' },
+  { id:'sans',     label:'Modern',    css:"-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" },
+];
+const MARGIN_PX = { narrow:14, normal:30, wide:52 };
+
+function themeDef() {
+  return THEMES.find(t=>t.id===A.readerSettings.theme) || THEMES[2];
+}
+
+function applyReaderSettings() {
+  const s = A.readerSettings;
+  const r = document.getElementById('reader');
+  if (r) {
+    THEMES.forEach(t => r.classList.remove('t-'+t.id));
+    r.classList.add('t-'+themeDef().id);
+    r.classList.toggle('flow-scroll', s.flow !== 'paginated');
+  }
+  // Brightness dimmer
+  const bo = document.getElementById('brightOverlay');
+  if (bo) bo.style.opacity = ((100 - (s.brightness||100)) / 100 * 0.8).toFixed(2);
+  // Page margins (padding on the rendition container)
+  const v = document.getElementById('viewer');
+  if (v) {
+    const pad = MARGIN_PX[s.margins] ?? MARGIN_PX.normal;
+    v.style.paddingLeft = v.style.paddingRight = pad + 'px';
+  }
+  applyEpubTheme();
+  syncSettingsUI();
+}
+
+function applyEpubTheme() {
+  if (!A.rend) return;
+  const s = A.readerSettings, t = themeDef();
+  const fontDef = FONTS.find(f=>f.id===s.font) || FONTS[0];
+  const body = {
+    'background': t.bg + ' !important',
+    'color': t.fg + ' !important',
+    'line-height': `${s.lineHeight} !important`,
+  };
+  const para = { 'line-height': `${s.lineHeight} !important` };
+  if (s.bold)   { body['font-weight'] = '600 !important'; para['font-weight'] = '600 !important'; }
+  if (s.justify) {
+    para['text-align'] = 'justify !important';
+    para['-webkit-hyphens'] = 'auto'; para['hyphens'] = 'auto';
+  }
+  const rules = { 'body': body, 'p': para, 'a': { 'color': t.link + ' !important' } };
+  try {
+    const name = 'folio' + (++A.themeCounter);
+    A.rend.themes.register(name, rules);
+    A.rend.themes.select(name);
+    A.rend.themes.fontSize(`${s.fontSize||100}%`);
+    if (fontDef.css) A.rend.themes.font(fontDef.css);
+  } catch(e) { console.error(e); }
+  // Direct fallback so already-rendered views recolor instantly
+  try {
+    A.rend.views().forEach(view => {
+      try {
+        const doc = view.document;
+        doc.documentElement.style.background = t.bg;
+        doc.body.style.background = t.bg;
+        doc.body.style.color = t.fg;
+      } catch(_) {}
+    });
+  } catch(_) {}
+}
+
+function syncSettingsUI() {
+  const s = A.readerSettings;
+  document.getElementById('fontSample').textContent = `${s.fontSize||100}%`;
+  document.querySelectorAll('#themeRow .theme-swatch').forEach(b =>
+    b.classList.toggle('on', b.dataset.theme === s.theme));
+  document.querySelectorAll('#fontChips .fchip').forEach(b =>
+    b.classList.toggle('on', b.dataset.font === s.font));
+  document.querySelectorAll('#lineSeg button').forEach(b =>
+    b.classList.toggle('on', Math.abs(parseFloat(b.dataset.line) - s.lineHeight) < .01));
+  document.querySelectorAll('#marginSeg button').forEach(b =>
+    b.classList.toggle('on', b.dataset.margin === s.margins));
+  document.querySelectorAll('#flowSeg button').forEach(b =>
+    b.classList.toggle('on', b.dataset.flow === s.flow));
+  document.querySelectorAll('#animSeg button').forEach(b =>
+    b.classList.toggle('on', b.dataset.anim === s.pageAnim));
+  document.getElementById('boldSwitch')?.classList.toggle('on', !!s.bold);
+  document.getElementById('justifySwitch')?.classList.toggle('on', !!s.justify);
+  document.getElementById('swipeSwitch')?.classList.toggle('on', !!s.swipe);
+  const br = document.getElementById('brightSlider');
+  if (br && Number(br.value) !== (s.brightness||100)) br.value = s.brightness||100;
+  document.getElementById('animSeg').style.opacity = s.flow==='paginated' ? '1':'0.4';
+  document.getElementById('animSeg').style.pointerEvents = s.flow==='paginated' ? 'auto':'none';
+}
+
+/* ── Pagination: fixed virtual pages, Apple-Books density ──────── */
+function getLocationStart(loc) {
   return Array.isArray(loc) ? loc[0]?.start : loc?.start;
 }
-function updateLocationMeta(loc){
-  const start = getLocationStart(loc);
-  if(!start) return false;
 
-  A.currentCfi = start.cfi || A.currentCfi;
-  A.currentPct = start.percentage || A.currentPct || 0;
-
-  let total = A.totalPages || 0;
+async function setupLocations(book, bookId) {
+  A.locationsReady = false;
+  A.totalPages = 0;
+  const cacheKey = `f_loc_${bookId}_cpp${CHARS_PER_PAGE}`;
   try {
-    total = A.epubBook?.locations?.total || A.epubBook?.locations?.length?.() || total;
+    const cached = await idbGet(cacheKey);
+    if (cached && A.epubBook === book) {
+      book.locations.load(cached);
+      const total = book.locations.total || (book.locations.length?.()) || 0;
+      if (total > 0) {
+        A.totalPages = total;
+        A.locationsReady = true;
+        refreshLocationStatus();
+        return;
+      }
+    }
   } catch(_) {}
-  if (total) A.totalPages = total;
+  try {
+    await book.locations.generate(CHARS_PER_PAGE);
+    if (A.epubBook !== book) return;                 // book was closed mid-generate
+    A.totalPages = book.locations.total || (book.locations.length?.()) || 0;
+    A.locationsReady = A.totalPages > 0;
+    try { await idbSet(cacheKey, book.locations.save()); } catch(_) {}
+    refreshLocationStatus();
+  } catch(e) { console.error('Location generation failed:', e); }
+}
 
-  const left = Math.max(0,(start.displayed?.total||0)-(start.displayed?.page||0));
-  A.chapterLeft = left ? `${left} page${left===1?'':'s'} left in chapter` : '';
-  return true;
+function pageFromCfi(cfi) {
+  if (!A.locationsReady || !A.epubBook || !cfi) return null;
+  try {
+    const idx = A.epubBook.locations.locationFromCfi(cfi);
+    if (typeof idx === 'number' && idx >= 0) return Math.min(A.totalPages||idx+1, idx+1);
+  } catch(_) {}
+  return null;
 }
-function estimatePageFromLocation(loc){
-  updateLocationMeta(loc);
-  if(A.activePageMap?.totalPages){
-    const mapped = pageFromMapByCfi(getCfiFromLocation(loc));
-    if(mapped) return mapped;
+
+function updatePageStatus() {
+  const pct = Math.round((A.currentPct||0)*100);
+  const cur = Math.max(1, Math.round(A.currentPage||1));
+  const total = Math.round(A.totalPages||0);
+  const bottom = document.getElementById('pageStatus');
+  const top = document.getElementById('sectionLeft');
+  const mp = document.getElementById('menuPct');
+  if (bottom) bottom.textContent = total
+    ? `Page ${nfmt(cur)} of ${nfmt(Math.max(total,cur))} · ${pct}%`
+    : `${pct}%`;
+  if (top) top.textContent = A.chapterLeft||'';
+  if (mp) mp.textContent = `${pct}%`;
+}
+function updateScrub() {
+  if (A.scrubbing) return;
+  const el = document.getElementById('scrub');
+  if (el) el.value = Math.round((A.currentPct||0)*1000);
+}
+function refreshLocationStatus() {
+  try {
+    const loc = A.rend?.currentLocation?.();
+    const start = getLocationStart(loc);
+    if (!start) { updatePageStatus(); return; }
+    handleRelocate(start);
+  } catch(e) { console.error(e); }
+}
+
+function chapterLabelForHref(href) {
+  if (!href) return '';
+  const base = String(href).split('#')[0];
+  const item = (A.toc||[]).find(t => String(t.href||'').split('#')[0] === base);
+  return item?.label || '';
+}
+
+function handleRelocate(start) {
+  A.currentCfi = start.cfi || A.currentCfi;
+  if (A.locationsReady) {
+    let idx = (typeof start.location === 'number' && start.location >= 0) ? start.location : null;
+    if (idx === null) {
+      const p = pageFromCfi(start.cfi);
+      if (p) idx = p - 1;
+    }
+    if (idx !== null) A.currentPage = Math.min(A.totalPages || (idx+1), idx+1);
+    A.currentPct = (typeof start.percentage === 'number' && start.percentage > 0)
+      ? start.percentage
+      : (A.totalPages ? A.currentPage / A.totalPages : (A.currentPct||0));
+  } else {
+    A.currentPct = start.percentage || A.currentPct || 0;
   }
-  const pct = A.currentPct || 0;
-  const total = A.totalPages || 0;
-  if(total) return Math.max(1, Math.min(total, Math.round(pct * total) || 1));
-  return Math.max(1, Math.round(pct * 1000) || 1);
+  const disp = start.displayed;
+  const left = Math.max(0,(disp?.total||0)-(disp?.page||0));
+  A.chapterLeft = left ? `${left} page${left===1?'':'s'} left in chapter` : '';
+  updatePageStatus(); updateScrub(); updateBmBtn();
 }
-function setEstimatedPageFromLocation(loc){
-  if(A.activePageMap?.totalPages){
-    setPageFromActiveMap(loc);
+
+/* ── Chrome / menus / sheets ───────────────────────────────────── */
+function showChrome(auto=true) {
+  const r = document.getElementById('reader');
+  if (!r?.classList.contains('active')) return;
+  refreshLocationStatus();
+  r.classList.add('chrome');
+  clearTimeout(A.chromeHideTmr);
+  if (auto) A.chromeHideTmr = setTimeout(hideChrome, 5000);
+}
+function hideChrome(){ clearTimeout(A.chromeHideTmr); closeReaderMenu(); document.getElementById('reader')?.classList.remove('chrome'); }
+function toggleChrome(){ const r=document.getElementById('reader'); if(!r) return; r.classList.contains('chrome')?hideChrome():showChrome(true); }
+function closeReaderMenu(){ document.getElementById('readerMenu')?.classList.remove('open'); document.getElementById('menuFab')?.classList.remove('open'); }
+function toggleReaderMenu(){ const menu=document.getElementById('readerMenu'), fab=document.getElementById('menuFab'); if(!menu||!fab) return; const open=!menu.classList.contains('open'); menu.classList.toggle('open',open); fab.classList.toggle('open',open); showChrome(false); }
+function openSheet(id){ closeReaderMenu(); showChrome(false); document.getElementById('reader')?.classList.add('sheet-open'); document.getElementById(id)?.classList.add('on'); }
+function closeSheet(id){ document.getElementById(id)?.classList.remove('on'); if(!document.querySelector('#reader .sheet-backdrop.on')) document.getElementById('reader')?.classList.remove('sheet-open'); showChrome(true); }
+
+/* ── Table of contents + bookmarks ─────────────────────────────── */
+function flattenToc(items,depth=0,out=[]) {
+  (items||[]).forEach(item=>{
+    out.push({label:item.label?.trim()||item.title||'Chapter',href:item.href,depth});
+    if(item.subitems?.length) flattenToc(item.subitems,depth+1,out);
+  });
+  return out;
+}
+function renderToc() {
+  const list = document.getElementById('tocList');
+  if (!list) return;
+  const toc = A.toc||[];
+  if (!toc.length) { list.innerHTML='<div class="nodata">No table of contents found.</div>'; return; }
+  list.innerHTML = toc.map((item,i)=>
+    `<button class="toc-item" data-i="${i}" style="padding-left:${8+item.depth*18}px">
+      <span>${esc(item.label)}</span><span>›</span></button>`).join('');
+  list.querySelectorAll('.toc-item').forEach(btn=>btn.addEventListener('click',async()=>{
+    const item = A.toc[Number(btn.dataset.i)];
+    if (item?.href && A.rend) {
+      closeSheet('tocSheet'); hideChrome();
+      await A.rend.display(item.href);
+      setTimeout(refreshLocationStatus, 220);
+    }
+  }));
+}
+function bmList() { return A.bookmarks[A.bookId] || (A.bookmarks[A.bookId]=[]); }
+function currentBookmark() {
+  const arr = bmList();
+  if (A.locationsReady) return arr.find(b => b.page === A.currentPage);
+  return arr.find(b => b.cfi === A.currentCfi);
+}
+function updateBmBtn() {
+  document.getElementById('bmBtn')?.classList.toggle('bm-on', !!currentBookmark());
+}
+async function toggleBookmark() {
+  if (!A.bookId || !A.currentCfi) return;
+  const arr = bmList();
+  const existing = currentBookmark();
+  if (existing) {
+    A.bookmarks[A.bookId] = arr.filter(b=>b.id!==existing.id);
+    toast('Bookmark removed');
+  } else {
+    let label = '';
+    try {
+      const start = getLocationStart(A.rend?.currentLocation?.());
+      label = chapterLabelForHref(start?.href);
+    } catch(_) {}
+    arr.push({ id:uid(), cfi:A.currentCfi, page:A.currentPage,
+      pct:A.currentPct, label, created:new Date().toISOString() });
+    toast('Bookmarked');
+  }
+  await persist();
+  updateBmBtn();
+}
+function renderBookmarks() {
+  const list = document.getElementById('bmList');
+  const arr = [...bmList()].sort((a,b)=>(a.page||0)-(b.page||0));
+  if (!arr.length) {
+    list.innerHTML = '<div class="nodata">No bookmarks in this book yet.<br>Tap the ribbon at the top of a page to save it.</div>';
     return;
   }
-  const estimated = estimatePageFromLocation(loc);
-  A.currentPage = estimated;
-  updatePageStatus();
+  list.innerHTML = arr.map(b=>`
+    <div class="bm-row" data-id="${b.id}">
+      <span class="bmi">🔖</span>
+      <div class="bmt">
+        <b>Page ${nfmt(b.page||'?')}${b.label?` · ${esc(b.label)}`:''}</b>
+        <span>${Math.round((b.pct||0)*100)}% · ${new Date(b.created).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>
+      </div>
+      <button class="bm-del" data-id="${b.id}">✕</button>
+    </div>`).join('');
+  list.querySelectorAll('.bm-row').forEach(r=>r.addEventListener('click', async e=>{
+    if (e.target.closest('.bm-del')) return;
+    const bm = bmList().find(b=>b.id===r.dataset.id);
+    if (bm && A.rend) { closeSheet('tocSheet'); hideChrome(); await A.rend.display(bm.cfi); setTimeout(refreshLocationStatus,220); }
+  }));
+  list.querySelectorAll('.bm-del').forEach(btn=>btn.addEventListener('click', async e=>{
+    e.stopPropagation();
+    A.bookmarks[A.bookId] = bmList().filter(b=>b.id!==btn.dataset.id);
+    await persist(); renderBookmarks(); updateBmBtn();
+  }));
 }
-function applyCompletedPageTurn(direction, locBefore, locAfter){
-  updateLocationMeta(locAfter);
 
-  const beforeCfi = getLocationStart(locBefore)?.cfi || null;
-  const afterCfi = getLocationStart(locAfter)?.cfi || null;
-  const moved = !beforeCfi || !afterCfi || beforeCfi !== afterCfi;
+/* ── Page turning with animation ───────────────────────────────── */
+const wait = ms => new Promise(r => setTimeout(r, ms));
 
-  if (moved) {
-    if (direction === 'next') A.currentPage = Math.min(A.totalPages || 999999, (A.currentPage || 1) + 1);
-    else A.currentPage = Math.max(1, (A.currentPage || 1) - 1);
+async function stablePageTurn(dir) {
+  if (!A.rend || A.turningPage) return;
+  const s = A.readerSettings;
+  if (s.flow !== 'paginated') {
+    try { dir === 'next' ? A.rend.next() : A.rend.prev(); } catch(_) {}
+    return;
   }
-
-  updatePageStatus(false);
-}
-function forceRefreshLocationStatus(){
-  try{
-    const loc=A.rend?.currentLocation?.();
-    if(loc){
-      updateLocationMeta(loc);
-      updatePageStatus();
+  A.turningPage = true;
+  const w = document.getElementById('viewerWrap');
+  const anim = s.pageAnim || 'slide';
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  try {
+    if (!w || anim === 'none' || reduce) {
+      await (dir === 'next' ? A.rend.next() : A.rend.prev());
+    } else if (anim === 'fade') {
+      w.classList.add('anim');
+      w.style.opacity = '0.25';
+      await wait(150);
+      await (dir === 'next' ? A.rend.next() : A.rend.prev());
+      w.classList.remove('anim');
+      w.classList.add('anim-in');
+      requestAnimationFrame(() => { w.style.opacity = '1'; });
+      await wait(200);
+    } else { /* slide */
+      const out = dir === 'next' ? -22 : 22;
+      const inFrom = dir === 'next' ? 26 : -26;
+      w.classList.add('anim');
+      w.style.transform = `translateX(${out}px)`;
+      w.style.opacity = '0.55';
+      await wait(150);
+      await (dir === 'next' ? A.rend.next() : A.rend.prev());
+      w.classList.remove('anim');
+      w.style.transition = 'none';
+      w.style.transform = `translateX(${inFrom}px)`;
+      void w.offsetWidth;                       // force reflow
+      w.style.transition = '';
+      w.classList.add('anim-in');
+      w.style.transform = 'translateX(0)';
+      w.style.opacity = '1';
+      await wait(210);
     }
-  }catch(e){console.error(e)}
-}
-function showChrome(auto=true){
-  const r=document.getElementById('reader');
-  if(!r?.classList.contains('active')) return;
-  forceRefreshLocationStatus();
-  r.classList.add('chrome');
-  updatePageStatus(true);
-  clearTimeout(A.chromeHideTmr);
-  if(auto) A.chromeHideTmr=setTimeout(hideChrome,4500);
-}
-function hideChrome(){clearTimeout(A.chromeHideTmr); closeReaderMenu(); document.getElementById('reader')?.classList.remove('chrome'); updatePageStatus(false)}
-function toggleChrome(){const r=document.getElementById('reader'); if(!r) return; r.classList.contains('chrome')?hideChrome():showChrome(true)}
-function closeReaderMenu(){document.getElementById('readerMenu')?.classList.remove('open'); document.getElementById('menuFab')?.classList.remove('open')}
-function toggleReaderMenu(){const menu=document.getElementById('readerMenu'), fab=document.getElementById('menuFab'); if(!menu||!fab) return; const open=!menu.classList.contains('open'); menu.classList.toggle('open',open); fab.classList.toggle('open',open); showChrome(false)}
-function openSheet(id){closeReaderMenu(); showChrome(false); document.getElementById('reader')?.classList.add('sheet-open'); document.getElementById(id)?.classList.add('on')}
-function closeSheet(id){document.getElementById(id)?.classList.remove('on'); if(!document.querySelector('.sheet-backdrop.on')) document.getElementById('reader')?.classList.remove('sheet-open'); showChrome(true)}
-function flattenToc(items,depth=0,out=[]){(items||[]).forEach(item=>{out.push({label:item.label||item.title||'Chapter',href:item.href,depth}); if(item.subitems?.length) flattenToc(item.subitems,depth+1,out)}); return out}
-function renderToc(){const list=document.getElementById('tocList'); if(!list) return; const toc=A.toc||[]; if(!toc.length){list.innerHTML='<div class="nodata">No table of contents found.</div>'; return} list.innerHTML=toc.map((item,i)=>`<button class="toc-item" data-i="${i}" style="padding-left:${8+item.depth*18}px"><span>${esc(item.label)}</span><span>›</span></button>`).join(''); list.querySelectorAll('.toc-item').forEach(btn=>btn.addEventListener('click',async()=>{const item=A.toc[Number(btn.dataset.i)]; if(item?.href&&A.rend){ closeSheet('tocSheet'); hideChrome(); await A.rend.display(item.href); setTimeout(()=>{ const loc=A.rend?.currentLocation?.(); if(loc) setEstimatedPageFromLocation(loc); },180); setTimeout(()=>{ const loc=A.rend?.currentLocation?.(); if(loc) setEstimatedPageFromLocation(loc); },650)}}))}
-async function stablePageTurn(direction){
-  if(!A.rend||A.turningPage||A.paginationRunning) return;
-  A.turningPage=true;
-  A.pendingTurn=direction;
-  closeReaderMenu();
-  hideChrome();
-
-  try{
-    if(direction==='prev') await A.rend.prev();
-    else await A.rend.next();
-
-    setTimeout(()=>{
-      try{
-        const loc=A.rend.currentLocation?.();
-        if(A.activePageMap?.totalPages && loc){
-          setPageFromActiveMap(loc);
-        }else{
-          updateLocationMeta(loc);
-          if(direction==='next') A.currentPage=Math.min(A.totalPages||999999,(A.currentPage||1)+1);
-          else A.currentPage=Math.max(1,(A.currentPage||1)-1);
-          updatePageStatus(false);
-        }
-      }catch(e){console.error(e)}
-      A.pendingTurn=null;
-    },140);
+  } catch(_) {
+  } finally {
+    if (w) { w.classList.remove('anim','anim-in'); w.style.transform=''; w.style.opacity=''; w.style.transition=''; }
+    A.turningPage = false;
   }
-  catch(e){console.error(e); toast('Page turn failed'); A.pendingTurn=null}
-  finally{setTimeout(()=>{A.turningPage=false},260)}
 }
-function wireReaderControlsOnce(){
-  if(window.__folioReaderControlsWired) return; window.__folioReaderControlsWired=true;
-  const rbody=document.querySelector('#reader .rbody');
-  rbody?.addEventListener('touchstart',e=>{if(!A.readerSettings.animation) return; if(e.target.closest?.('#menuFab,#readerMenu,.sheet-backdrop')) return; const t=e.changedTouches?.[0]; if(!t) return; A.swipeX=t.clientX; A.swipeY=t.clientY},{passive:true});
-  rbody?.addEventListener('touchend',e=>{if(!A.readerSettings.animation) return; if(e.target.closest?.('#menuFab,#readerMenu,.sheet-backdrop')) return; const t=e.changedTouches?.[0]; if(!t) return; const dx=t.clientX-A.swipeX, dy=t.clientY-A.swipeY; if(Math.abs(dx)<45||Math.abs(dx)<Math.abs(dy)*1.25) return; A.didSwipe=true; setTimeout(()=>A.didSwipe=false,350); if(dx<0) stablePageTurn('next'); else stablePageTurn('prev')},{passive:true});
-  document.getElementById('tmenu')?.addEventListener('click',e=>{if(A.didSwipe) return; if(e.target.closest?.('#menuFab,#readerMenu,.sheet-backdrop')) return; e.stopPropagation(); toggleChrome()});
-  document.getElementById('tprev')?.addEventListener('click',e=>{e.stopPropagation(); stablePageTurn('prev')});
-  document.getElementById('tnext')?.addEventListener('click',e=>{e.stopPropagation(); stablePageTurn('next')});
-  document.getElementById('menuFab')?.addEventListener('click',e=>{e.preventDefault(); e.stopPropagation(); toggleReaderMenu()});
-  document.getElementById('readerMenu')?.addEventListener('click',e=>e.stopPropagation());
-  document.getElementById('contentsBtn')?.addEventListener('click',()=>{renderToc(); openSheet('tocSheet')});
-  document.getElementById('settingsBtn')?.addEventListener('click',()=>{applyReaderSettings(); openSheet('settingsSheet')});
-  document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeSheet(b.dataset.close)));
-  document.querySelectorAll('.sheet-backdrop').forEach(bg=>bg.addEventListener('click',e=>{if(e.target===bg) closeSheet(bg.id)}));
-  document.querySelectorAll('[data-theme]').forEach(b=>b.addEventListener('click',async()=>{A.readerSettings.theme=b.dataset.theme; applyReaderSettings(); await persist()}));
-  document.getElementById('fontDown')?.addEventListener('click',async()=>{A.readerSettings.fontSize=Math.max(80,(A.readerSettings.fontSize||100)-10); applyReaderSettings(); await persist()});
-  document.getElementById('fontUp')?.addEventListener('click',async()=>{A.readerSettings.fontSize=Math.min(180,(A.readerSettings.fontSize||100)+10); applyReaderSettings(); await persist()});
-  document.getElementById('animSwitch')?.addEventListener('click',async()=>{A.readerSettings.animation=!A.readerSettings.animation; applyReaderSettings(); await persist()});
-}
-function wireDebugRefresh(){const label=document.getElementById('versionLabel'); if(label) label.textContent=FOLIO_VERSION; const link=document.getElementById('refreshBtn'); if(!link) return; const setHref=()=>{link.href='./?v='+encodeURIComponent(FOLIO_VERSION+'-'+Date.now())}; setHref(); link.addEventListener('touchstart',setHref,{passive:true}); link.addEventListener('mousedown',setHref)}
 
+/* ── Rendition sizing (margins live as padding on #viewer) ─────── */
+function resizeRendition() {
+  if (!A.rend) return;
+  const v = document.getElementById('viewer');
+  if (!v) return;
+  try {
+    const cs = getComputedStyle(v);
+    const padL = parseFloat(cs.paddingLeft)||0, padR = parseFloat(cs.paddingRight)||0;
+    const wdt = Math.max(100, v.clientWidth - padL - padR);
+    const hgt = Math.max(100, v.clientHeight);
+    A.rend.resize(wdt, hgt);
+  } catch(_) {}
+}
+let rsTmr = null;
+window.addEventListener('resize', () => {
+  if (!A.rend) return;
+  clearTimeout(rsTmr);
+  rsTmr = setTimeout(() => { resizeRendition(); setTimeout(refreshLocationStatus, 250); }, 180);
+});
+
+/* ── One-time wiring of all reader controls ────────────────────── */
+function wireReaderControlsOnce() {
+  if (A.controlsWired) return;
+  A.controlsWired = true;
+  const $ = id => document.getElementById(id);
+
+  $('rback').addEventListener('click', () => closeReader(true));
+  $('bmBtn').addEventListener('click', toggleBookmark);
+
+  /* Tap zones: left = back, middle = chrome, right = forward */
+  $('tprev').addEventListener('click', () => stablePageTurn('prev'));
+  $('tnext').addEventListener('click', () => stablePageTurn('next'));
+  $('tmenu').addEventListener('click', toggleChrome);
+
+  /* Swipe to turn (paginated mode, when enabled) */
+  const rbody = document.querySelector('#reader .rbody');
+  rbody.addEventListener('touchstart', e => {
+    if (!A.readerSettings.swipe || A.readerSettings.flow !== 'paginated') return;
+    if (e.touches.length !== 1) return;
+    A.swipeX = e.touches[0].clientX; A.swipeY = e.touches[0].clientY; A.didSwipe = false;
+  }, {passive:true});
+  rbody.addEventListener('touchend', e => {
+    if (!A.readerSettings.swipe || A.readerSettings.flow !== 'paginated') return;
+    if (A.didSwipe || !e.changedTouches.length) return;
+    const dx = e.changedTouches[0].clientX - A.swipeX;
+    const dy = e.changedTouches[0].clientY - A.swipeY;
+    if (Math.abs(dx) > 52 && Math.abs(dx) > Math.abs(dy)*1.4) {
+      A.didSwipe = true;
+      stablePageTurn(dx < 0 ? 'next' : 'prev');
+    }
+  }, {passive:true});
+
+  /* Arrow keys (window-level: iframe focus is unreliable) */
+  window.addEventListener('keydown', e => {
+    if (!A.rend || !document.getElementById('reader').classList.contains('active')) return;
+    if (document.querySelector('#reader .sheet-backdrop.on')) return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); stablePageTurn('next'); }
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); stablePageTurn('prev'); }
+  });
+
+  /* Menu + sheets */
+  $('menuFab').addEventListener('click', e => { e.stopPropagation(); toggleReaderMenu(); });
+  $('contentsBtn').addEventListener('click', () => { renderToc(); renderBookmarks(); openSheet('tocSheet'); });
+  $('settingsBtn').addEventListener('click', () => { syncSettingsUI(); openSheet('settingsSheet'); });
+  document.querySelectorAll('#reader [data-close]').forEach(b =>
+    b.addEventListener('click', () => closeSheet(b.dataset.close)));
+  document.querySelectorAll('#reader .sheet-backdrop').forEach(bg =>
+    bg.addEventListener('click', e => { if (e.target === bg) closeSheet(bg.id); }));
+
+  /* Contents ↔ Bookmarks tabs */
+  $('tabChapters').addEventListener('click', () => {
+    $('tabChapters').classList.add('on'); $('tabBookmarks').classList.remove('on');
+    $('tocList').style.display = ''; $('bmList').style.display = 'none';
+  });
+  $('tabBookmarks').addEventListener('click', () => {
+    $('tabBookmarks').classList.add('on'); $('tabChapters').classList.remove('on');
+    $('bmList').style.display = ''; $('tocList').style.display = 'none';
+    renderBookmarks();
+  });
+
+  /* Theme swatches (built from THEMES) */
+  $('themeRow').innerHTML = THEMES.map(t => `
+    <button class="theme-swatch" data-theme="${t.id}"
+      style="background:${t.bg};color:${t.fg}">Aa<small>${t.name}</small></button>`).join('');
+  $('themeRow').querySelectorAll('.theme-swatch').forEach(b =>
+    b.addEventListener('click', async () => {
+      A.readerSettings.theme = b.dataset.theme;
+      applyReaderSettings(); await persist();
+    }));
+
+  /* Font chips (built from FONTS) */
+  $('fontChips').innerHTML = FONTS.map(f => `
+    <button class="fchip" data-font="${f.id}" style="font-family:${f.css||'inherit'}">${f.name}</button>`).join('');
+  $('fontChips').querySelectorAll('.fchip').forEach(b =>
+    b.addEventListener('click', async () => {
+      A.readerSettings.font = b.dataset.font;
+      applyReaderSettings(); await persist();
+    }));
+
+  /* Text size 50–250% */
+  $('fontDown').addEventListener('click', async () => {
+    A.readerSettings.fontSize = Math.max(50, (A.readerSettings.fontSize||100) - 10);
+    applyReaderSettings(); await persist(); setTimeout(refreshLocationStatus, 250);
+  });
+  $('fontUp').addEventListener('click', async () => {
+    A.readerSettings.fontSize = Math.min(250, (A.readerSettings.fontSize||100) + 10);
+    applyReaderSettings(); await persist(); setTimeout(refreshLocationStatus, 250);
+  });
+
+  /* Switches */
+  const wireSwitch = (id, key, after) => $(id).addEventListener('click', async () => {
+    A.readerSettings[key] = !A.readerSettings[key];
+    applyReaderSettings(); await persist(); if (after) after();
+  });
+  wireSwitch('boldSwitch', 'bold');
+  wireSwitch('justifySwitch', 'justify');
+  wireSwitch('swipeSwitch', 'swipe');
+
+  /* Segmented controls */
+  $('lineSeg').querySelectorAll('button').forEach(b =>
+    b.addEventListener('click', async () => {
+      A.readerSettings.lineHeight = parseFloat(b.dataset.line);
+      applyReaderSettings(); await persist();
+    }));
+  $('marginSeg').querySelectorAll('button').forEach(b =>
+    b.addEventListener('click', async () => {
+      A.readerSettings.margins = b.dataset.margin;
+      applyReaderSettings(); resizeRendition(); await persist();
+      setTimeout(refreshLocationStatus, 250);
+    }));
+  $('animSeg').querySelectorAll('button').forEach(b =>
+    b.addEventListener('click', async () => {
+      A.readerSettings.pageAnim = b.dataset.anim;
+      applyReaderSettings(); await persist();
+    }));
+  $('flowSeg').querySelectorAll('button').forEach(b =>
+    b.addEventListener('click', async () => {
+      if (A.readerSettings.flow === b.dataset.flow) return;
+      A.readerSettings.flow = b.dataset.flow;
+      applyReaderSettings(); await persist();
+      await remountRendition();
+    }));
+
+  /* Brightness */
+  $('brightSlider').addEventListener('input', () => {
+    A.readerSettings.brightness = Number($('brightSlider').value);
+    const bo = $('brightOverlay');
+    if (bo) bo.style.opacity = ((100 - A.readerSettings.brightness) / 100 * 0.8).toFixed(2);
+  });
+  $('brightSlider').addEventListener('change', () => persist());
+
+  /* Scrubber */
+  $('scrub').addEventListener('input', () => {
+    A.scrubbing = true;
+    const v = Number($('scrub').value) / 1000;
+    const ps = $('pageStatus');
+    if (A.locationsReady && A.totalPages) {
+      ps.textContent = `Page ${nfmt(Math.max(1, Math.round(v*A.totalPages)))} of ${nfmt(A.totalPages)} · ${Math.round(v*100)}%`;
+    } else ps.textContent = `${Math.round(v*100)}%`;
+  });
+  $('scrub').addEventListener('change', async () => {
+    const v = Number($('scrub').value) / 1000;
+    A.scrubbing = false;
+    if (A.rend && A.epubBook?.locations && A.locationsReady) {
+      try {
+        const cfi = A.epubBook.locations.cfiFromPercentage(v);
+        if (cfi) { await A.rend.display(cfi); setTimeout(refreshLocationStatus, 200); }
+      } catch(_) {}
+    }
+    showChrome(true);
+  });
+}
+
+/* ── Reader lifecycle ──────────────────────────────────────────── */
 async function openReader(bookId) {
-  dbg('Opening reader for bookId: ' + bookId);
-  const bk = A.books.find(b=>b.id===bookId); if (!bk) { dbg('Book not found in metadata'); return; }
+  const bk = A.books.find(b => b.id === bookId); if (!bk) return;
   A.bookId = bookId;
+  A.endPromptShown = false;
+  A.currentPage = 1; A.totalPages = 0; A.locationsReady = false;
+  A.currentPct = A.progress[bookId]?.pct || 0; A.currentCfi = null;
+  A.turningPage = false;
 
-  document.getElementById('rtitle').textContent  = bk.title;
-  A.currentPage=1; A.totalPages=0; A.currentPct=A.progress[bookId]?.pct||0; A.currentCfi=null; A.pendingTurn=null; A.activePageMap=null; A.activePageMapKey=null;
-  updatePageStatus(false);
-  document.getElementById('timer').textContent   = '0:00';
+  document.getElementById('rtitle').textContent = bk.title;
+  document.getElementById('timer').textContent = '0:00';
+  document.getElementById('sectionLeft').textContent = '';
+  document.getElementById('pageStatus').textContent = 'Loading…';
   document.getElementById('rload').style.display = 'flex';
-  updateReaderThemeClass();
   document.getElementById('reader').classList.add('active');
+  document.getElementById('reader').classList.remove('chrome','sheet-open');
   document.getElementById('app').classList.add('reader-open');
   document.body.classList.add('reader-open');
-  document.getElementById('reader').classList.remove('chrome','sheet-open');
+  document.getElementById('bnav').style.display = 'none';
   wireReaderControlsOnce();
-  document.getElementById('bnav').style.display  = 'none';
+  applyReaderSettings();
 
-  dbg('Loading EPUB from IndexedDB...');
   const stored = await getEpub(bookId);
-  dbg('Stored EPUB found: ' + !!stored + (stored && stored.byteLength ? ' · ' + Math.round(stored.byteLength/1024/1024*10)/10 + ' MB' : ''));
   if (!stored) {
     document.getElementById('rload').style.display = 'none';
     const ok = confirm(`"${bk.title}" needs to be re-uploaded once to read. Select the file?`);
@@ -1074,84 +2110,111 @@ async function openReader(bookId) {
   await mountEpub(buf, bk);
 }
 
+function attachRendition(rend, bookId) {
+  rend.on('relocated', loc => {
+    const start = getLocationStart(loc) || loc?.start;
+    if (!start) return;
+    handleRelocate(start);
+    if (!A.progress[bookId]) A.progress[bookId] = {};
+    A.progress[bookId].cfi = start.cfi;
+    A.progress[bookId].pct = A.currentPct;
+    A.progress[bookId].lastRead = Date.now();
+    persist();
+    /* End-of-book: offer to mark finished, once per open */
+    const bk = A.books.find(b => b.id === bookId);
+    const atEnd = loc?.atEnd || (A.currentPct >= 0.995);
+    if (atEnd && bk && !bk.finished && !A.endPromptShown) {
+      A.endPromptShown = true;
+      setTimeout(() => openFinishSheet(bookId), 450);
+    }
+  });
+  rend.on('keyup', e => {
+    if (e.key === 'ArrowRight') stablePageTurn('next');
+    if (e.key === 'ArrowLeft')  stablePageTurn('prev');
+  });
+  /* In scroll mode the tap zones are hidden; clicks inside the
+     book toggle the chrome instead. */
+  rend.on('click', () => {
+    if (A.readerSettings.flow !== 'paginated') toggleChrome();
+  });
+}
+
+function renditionOpts() {
+  const flow = A.readerSettings.flow === 'paginated' ? 'paginated' : 'scrolled-doc';
+  return flow === 'paginated'
+    ? { width:'100%', height:'100%', spread:'none', flow:'paginated', manager:'default' }
+    : { width:'100%', height:'100%', spread:'none', flow:'scrolled-doc', manager:'continuous' };
+}
+
 async function mountEpub(buf, bkMeta) {
-  dbg('Mounting EPUB...');
   teardown();
   const viewer = document.getElementById('viewer');
   await new Promise(r => requestAnimationFrame(r));
-  const h = viewer.clientHeight || Math.max(320, window.innerHeight-160);
 
   try {
     const epubBk = makeEpubBook(buf.slice(0));
     A.epubBook = epubBk;
     await epubBk.ready;
-    dbg('Reader EPUB ready');
 
-    const rend = epubBk.renderTo(viewer, {
-      width:'100%', height:h, spread:'none', flow:'paginated', manager:'default'
-    });
+    const rend = epubBk.renderTo(viewer, renditionOpts());
     A.rend = rend;
     A.toc = flattenToc(epubBk.navigation?.toc || []);
     renderToc();
     applyReaderSettings();
-
-    epubBk.locations.generate(350).then(()=>{ A.totalPages = epubBk.locations.total || epubBk.locations.length?.() || A.totalPages; updatePageStatus(); }).catch(()=>{});
+    attachRendition(rend, bkMeta.id);
 
     const saved = A.progress[bkMeta.id]?.cfi;
-    await rend.display(saved||undefined);
-    applyReaderSettings();
-    setTimeout(()=>{ const loc=A.rend?.currentLocation?.(); if(loc) setEstimatedPageFromLocation(loc); },100);
-    setTimeout(()=>buildScreenPageMap(bkMeta.id, saved || getCfiFromLocation(A.rend?.currentLocation?.())), 650);
-    dbg('Rendered first location');
-
+    await rend.display(saved || undefined);
+    applyEpubTheme();
     document.getElementById('rload').style.display = 'none';
+    showChrome(true);
 
-    rend.on('relocated', loc => {
-      if (A.pendingTurn) {
-        updateLocationMeta(loc);
-        updatePageStatus(false);
-      } else {
-        setEstimatedPageFromLocation(loc);
-      }
-      if (!A.progress[bkMeta.id]) A.progress[bkMeta.id]={};
-      A.progress[bkMeta.id].cfi      = loc.start.cfi;
-      A.progress[bkMeta.id].pct      = A.currentPct;
-      A.progress[bkMeta.id].lastRead = Date.now();
-      persist();
-    });
-
-    rend.on('keyup', e => {
-      if (e.key==='ArrowRight') stablePageTurn('next');
-      if (e.key==='ArrowLeft')  stablePageTurn('prev');
-    });
+    /* Fixed pagination (cached after first generate) — runs in background */
+    setupLocations(epubBk, bkMeta.id);
 
     startTimer(bkMeta.id);
-
   } catch(err) {
     console.error('Render error:', err);
-    dbg('Render failed: ' + (err && (err.message || err.name) || err));
     document.getElementById('rload').style.display = 'none';
     viewer.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;
       justify-content:center;height:100%;gap:16px;padding:32px;text-align:center;color:#6B7280">
       <div style="font-size:48px">📚</div>
-      <div style="font-size:16px;font-weight:700;color:#1A1A1A">Render Error</div>
+      <div style="font-size:16px;font-weight:700">Render Error</div>
       <div style="font-size:13px;line-height:1.6">This EPUB couldn't be displayed.
       DRM-protected files and some older EPUBs may not work.</div></div>`;
     startTimer(bkMeta.id);
   }
 }
 
-function teardown() {
-  if (A.rend)     { try{A.rend.destroy();}     catch(_){} A.rend=null; }
-  if (A.epubBook) { try{A.epubBook.destroy();} catch(_){} A.epubBook=null; }
-  document.getElementById('viewer').innerHTML='';
+/* Rebuild the rendition in place (used when switching Pages ↔ Scroll) */
+async function remountRendition() {
+  if (!A.epubBook) return;
+  const cfi = A.currentCfi || A.progress[A.bookId]?.cfi;
+  const viewer = document.getElementById('viewer');
+  if (A.rend) { try { A.rend.destroy(); } catch(_) {} A.rend = null; }
+  viewer.innerHTML = '';
+  await new Promise(r => requestAnimationFrame(r));
+  try {
+    const rend = A.epubBook.renderTo(viewer, renditionOpts());
+    A.rend = rend;
+    applyReaderSettings();
+    attachRendition(rend, A.bookId);
+    await rend.display(cfi || undefined);
+    applyEpubTheme();
+    setTimeout(refreshLocationStatus, 250);
+  } catch(e) { console.error('Remount failed:', e); }
 }
 
-document.getElementById('rback').addEventListener('click', ()=>closeReader(true));
+function teardown() {
+  if (A.rend)     { try { A.rend.destroy(); }     catch(_) {} A.rend = null; }
+  if (A.epubBook) { try { A.epubBook.destroy(); } catch(_) {} A.epubBook = null; }
+  const v = document.getElementById('viewer');
+  if (v) v.innerHTML = '';
+}
 
-function closeReader(save=true) {
+function closeReader(save = true) {
   if (save) stopTimer();
-  else if (A.timerInt) { clearInterval(A.timerInt); A.timerInt=null; }
+  else if (A.timerInt) { clearInterval(A.timerInt); A.timerInt = null; }
   teardown();
   document.getElementById('rload').style.display = 'flex';
   hideChrome();
@@ -1161,14 +2224,16 @@ function closeReader(save=true) {
   document.getElementById('app').classList.remove('reader-open');
   document.body.classList.remove('reader-open');
   document.getElementById('bnav').style.display = 'flex';
-  A.bookId=null;
+  A.bookId = null; A.locationsReady = false;
   renderLib();
 }
 
+/* ── Session timer ─────────────────────────────────────────────── */
 function startTimer(bookId) {
+  if (A.timerInt) clearInterval(A.timerInt);
   A.elapsed = 0; A.paused = false;
-  A.sessP0 = A.progress[bookId]?.pct||0;
-  A.timerInt = setInterval(()=>{
+  A.sessP0 = A.progress[bookId]?.pct || 0;
+  A.timerInt = setInterval(() => {
     if (!A.paused) {
       A.elapsed++;
       document.getElementById('timer').textContent = fmtTimer(A.elapsed);
@@ -1177,91 +2242,35 @@ function startTimer(bookId) {
 }
 
 function stopTimer() {
-  clearInterval(A.timerInt); A.timerInt=null;
+  clearInterval(A.timerInt); A.timerInt = null;
   if (A.elapsed < 10 || !A.bookId) return;
-  const bk   = A.books.find(b=>b.id===A.bookId);
-  const prog = A.progress[A.bookId]||{};
+  const bk = A.books.find(b => b.id === A.bookId);
+  const prog = A.progress[A.bookId] || {};
   A.sessions.push({
-    id:uid(), bookId:A.bookId, bookTitle:bk?.title||'Unknown',
-    start: new Date(Date.now()-A.elapsed*1000).toISOString(),
-    end:   new Date().toISOString(),
-    secs:  A.elapsed, p0:A.sessP0, p1:prog.pct||A.sessP0,
+    id: uid(), bookId: A.bookId, bookTitle: bk?.title || 'Unknown',
+    start: new Date(Date.now() - A.elapsed*1000).toISOString(),
+    end: new Date().toISOString(),
+    secs: A.elapsed, p0: A.sessP0, p1: prog.pct || A.sessP0,
   });
-  if (!A.progress[A.bookId]) A.progress[A.bookId]={};
-  A.progress[A.bookId].totalSecs = (A.progress[A.bookId].totalSecs||0)+A.elapsed;
+  if (!A.progress[A.bookId]) A.progress[A.bookId] = {};
+  A.progress[A.bookId].totalSecs = (A.progress[A.bookId].totalSecs||0) + A.elapsed;
   persist();
   toast(`Session saved · ${fmt(A.elapsed)}`);
 }
 
-document.addEventListener('visibilitychange', ()=>{
+document.addEventListener('visibilitychange', () => {
   if (A.timerInt) A.paused = document.hidden;
 });
 
-function renderStats() {
-  const total = A.sessions.reduce((a,s)=>a+(s.secs||0),0);
-  const avg   = A.sessions.length ? total/A.sessions.length : 0;
-  const done  = Object.values(A.progress).filter(p=>(p.pct||0)>=.99).length;
-  document.getElementById('stot').textContent  = fmt(total);
-  document.getElementById('sdone').textContent = done;
-  document.getElementById('savg').textContent  = fmt(avg);
-  document.getElementById('sstr').textContent  = streak();
-  renderChart(); renderSessions();
+/* ── Boot ──────────────────────────────────────────────────────── */
+function wireDebugRefresh() {
+  const v = document.getElementById('versionLabel');
+  if (v) v.textContent = FOLIO_VERSION;
+  const r = document.getElementById('refreshBtn');
+  if (r) r.href = './?v=' + Date.now();
 }
 
-function renderChart() {
-  const chart = document.getElementById('chart');
-  const days = [];
-  for (let i=6; i>=0; i--) {
-    const d  = new Date(Date.now()-i*86400000);
-    const ds = d.toDateString();
-    const mins = Math.round(
-      A.sessions.filter(s=>new Date(s.start).toDateString()===ds)
-               .reduce((a,s)=>a+(s.secs||0),0)/60);
-    days.push({
-      mins, today:i===0,
-      lbl: i===0?'Today':d.toLocaleDateString('en-US',{weekday:'short'})
-    });
-  }
-  const max = Math.max(...days.map(d=>d.mins),1);
-  chart.innerHTML = days.map(d=>{
-    const h   = d.mins===0 ? 3 : Math.max(4,Math.round((d.mins/max)*72));
-    const cls = d.mins===0?'bar zero':`bar${d.today?' today':''}`;
-    return `<div class="bcol">
-      <div class="${cls}" style="height:${h}px"></div>
-      <div class="blbl">${d.lbl}</div>
-    </div>`;
-  }).join('');
-}
-
-function renderSessions() {
-  const list   = document.getElementById('slist');
-  const recent = [...A.sessions].reverse().slice(0,25);
-  if (!recent.length) {
-    list.innerHTML='<div class="nodata">No sessions yet.<br>Open a book to start reading!</div>';
-    return;
-  }
-  list.innerHTML = recent.map(s=>{
-    const delta = Math.round((s.p1-s.p0)*100);
-    return `<div class="srow">
-      <div class="sdot"></div>
-      <div class="sinf">
-        <div class="sbook">${esc(s.bookTitle)}</div>
-        <div class="smeta">${fmtDate(s.start)} · +${delta}% progress</div>
-      </div>
-      <div class="sdur">${fmt(s.secs)}</div>
-    </div>`;
-  }).join('');
-}
-
-window.addEventListener('resize', ()=>{
-  if (!A.rend) return;
-  const v = document.getElementById('viewer');
-  A.rend.resize(v.clientWidth, v.clientHeight);
-  applyReaderSettings();
-  setTimeout(forceRefreshLocationStatus,150);
-});
-
-(async ()=>{
+(async function init() {
   wireDebugRefresh();
   await hydrate();
   renderLib();
