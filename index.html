@@ -497,39 +497,71 @@ html.standalone body, html.standalone #app{background:var(--read-bg,#050505)!imp
 }
 
 
-/* Debug version / refresh button */
-.debug-refresh{
-  position:absolute;
-  left:12px;
-  bottom:calc(82px + env(safe-area-inset-bottom,0px));
-  z-index:500;
+
+
+/* Header debug version / refresh button */
+.hdr-left{
   display:flex;
   align-items:center;
-  gap:8px;
-  background:rgba(32,32,35,.88);
-  color:#fff;
-  border-radius:999px;
-  padding:8px 10px;
-  box-shadow:0 8px 24px rgba(0,0,0,.28);
-  backdrop-filter:blur(16px);
-  font-size:12px;
-  font-weight:700;
+  gap:10px;
 }
-.debug-refresh button{
-  border:0;
-  background:#007AFF;
-  color:#fff;
+.header-debug{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  background:rgba(45,106,79,.10);
+  border:1px solid rgba(45,106,79,.18);
+  color:var(--accent);
   border-radius:999px;
-  padding:7px 10px;
-  font-size:12px;
+  padding:5px 6px 5px 9px;
+  font-size:10px;
   font-weight:800;
+  line-height:1;
 }
-.debug-refresh .ver{
-  opacity:.88;
+.header-debug .ver{
+  max-width:92px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
   font-variant-numeric:tabular-nums;
 }
-#reader.active ~ .debug-refresh{
-  display:flex;
+.header-debug button{
+  border:0;
+  background:var(--accent);
+  color:#fff;
+  border-radius:999px;
+  padding:6px 8px;
+  font-size:10px;
+  font-weight:900;
+}
+
+
+/* v9: safer page animation and modal layering */
+#reader.turning-next #viewer,
+#reader.turning-prev #viewer{
+  animation:none!important;
+}
+#reader.turning-next::after,
+#reader.turning-prev::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:20;
+  pointer-events:none;
+  background:var(--read-bg);
+  animation:folioFadeTurn .18s ease both;
+}
+@keyframes folioFadeTurn{
+  0%{opacity:.18}
+  100%{opacity:0}
+}
+#reader.sheet-open .menu-fab,
+#reader.sheet-open .reader-menu{
+  display:none!important;
+  pointer-events:none!important;
+}
+.sheet-backdrop{
+  z-index:200!important;
 }
 
 </style>
@@ -540,7 +572,13 @@ html.standalone body, html.standalone #app{background:var(--read-bg,#050505)!imp
 
   <div class="screen active" id="lib">
     <div class="hdr">
-      <h1>Folio</h1>
+      <div class="hdr-left">
+        <h1>Folio</h1>
+        <div class="header-debug" id="debugRefresh">
+          <span class="ver" id="versionLabel">v9-swipe-fix</span>
+          <button id="refreshBtn" type="button">Refresh</button>
+        </div>
+      </div>
       <button class="ibtn" id="addbtn" title="Add Book">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
           <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
@@ -718,18 +756,11 @@ html.standalone body, html.standalone #app{background:var(--read-bg,#050505)!imp
       Stats
     </button>
   </nav>
-
-
-  <div class="debug-refresh" id="debugRefresh">
-    <span class="ver" id="versionLabel">v7-debug-refresh</span>
-    <button id="refreshBtn" type="button">Refresh</button>
-  </div>
-
-  <div class="toast" id="toast"></div>
+<div class="toast" id="toast"></div>
 </div>
 
 <script>
-const FOLIO_VERSION = 'v7-debug-refresh';
+const FOLIO_VERSION = 'v9-swipe-fix';
 
 function dbg(msg) {}
 
@@ -820,6 +851,10 @@ const A = {
   currentPct: 0,
   chapterLeft: '',
   chromeHideTmr: null,
+  turningPage: false,
+  swipeX: 0,
+  swipeY: 0,
+  didSwipe: false,
 };
 
 async function persist() {
@@ -1139,23 +1174,36 @@ function hideChrome() {
 
 
 async function animatedPageTurn(direction) {
-  if (!A.rend) return;
+  if (!A.rend || A.turningPage) return;
+  A.turningPage = true;
   const r = document.getElementById('reader');
   closeReaderMenu();
   hideChrome();
+
   if (A.readerSettings.animation) {
     r?.classList.remove('turning-next','turning-prev');
     void r?.offsetWidth;
     r?.classList.add(direction === 'prev' ? 'turning-prev' : 'turning-next');
   }
+
   try {
     if (direction === 'prev') await A.rend.prev();
     else await A.rend.next();
+
+    setTimeout(forceRefreshLocationStatus, 150);
+    setTimeout(forceRefreshLocationStatus, 450);
+  } catch(e) {
+    console.error('Page turn failed:', e);
+    try {
+      const loc = A.rend.currentLocation();
+      const cfi = Array.isArray(loc) ? loc[0]?.start?.cfi : loc?.start?.cfi;
+      if (cfi) await A.rend.display(cfi);
+    } catch(_) {}
   } finally {
     setTimeout(() => {
       r?.classList.remove('turning-next','turning-prev');
-      forceRefreshLocationStatus();
-    }, 260);
+      A.turningPage = false;
+    }, 220);
   }
 }
 function forceRefreshLocationStatus() {
@@ -1224,10 +1272,13 @@ function toggleChrome() {
 function openSheet(id) {
   closeReaderMenu();
   showChrome(false);
+  document.getElementById('reader')?.classList.add('sheet-open');
   document.getElementById(id)?.classList.add('on');
 }
 function closeSheet(id) {
   document.getElementById(id)?.classList.remove('on');
+  const anyOpen = !!document.querySelector('.sheet-backdrop.on');
+  if (!anyOpen) document.getElementById('reader')?.classList.remove('sheet-open');
   showChrome(true);
 }
 function flattenToc(items, depth=0, out=[]) {
@@ -1267,7 +1318,34 @@ function wireReaderControlsOnce() {
   if (window.__folioReaderControlsWired) return;
   window.__folioReaderControlsWired = true;
 
+
+  const rbody = document.querySelector('#reader .rbody');
+  rbody?.addEventListener('touchstart', e => {
+    if (!A.readerSettings.animation) return;
+    if (e.target.closest?.('#menuFab, #readerMenu, .sheet-backdrop')) return;
+    const t = e.changedTouches?.[0];
+    if (!t) return;
+    A.swipeX = t.clientX;
+    A.swipeY = t.clientY;
+  }, {passive:true});
+
+  rbody?.addEventListener('touchend', e => {
+    if (!A.readerSettings.animation) return;
+    if (e.target.closest?.('#menuFab, #readerMenu, .sheet-backdrop')) return;
+    const t = e.changedTouches?.[0];
+    if (!t) return;
+    const dx = t.clientX - A.swipeX;
+    const dy = t.clientY - A.swipeY;
+    if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy) * 1.25) return;
+    e.preventDefault?.();
+    A.didSwipe = true;
+    setTimeout(()=>{ A.didSwipe = false; }, 350);
+    if (dx < 0) animatedPageTurn('next');
+    else animatedPageTurn('prev');
+  }, {passive:false});
+
   document.getElementById('tmenu')?.addEventListener('click', e => {
+    if (A.didSwipe) return;
     if (e.target.closest?.('#menuFab, #readerMenu, .sheet-backdrop')) return;
     e.stopPropagation();
     closeReaderMenu();
@@ -1469,7 +1547,7 @@ function closeReader(save=true) {
   hideChrome();
   closeSheet('tocSheet');
   closeSheet('settingsSheet');
-  document.getElementById('reader').classList.remove('active');
+  document.getElementById('reader').classList.remove('active','sheet-open','turning-next','turning-prev');
   document.getElementById('bnav').style.display = 'flex';
   A.bookId=null;
   renderLib();
