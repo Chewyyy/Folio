@@ -499,7 +499,7 @@ fi.addEventListener('change', async e => {
 });
 
 async function ingest(file, existId=null) {
-  if (typeof ePub === 'undefined') {
+  if (!getEpubFactory()) {
     toast('Library not loaded yet — please wait a moment', 3500); return null;
   }
   toast('Reading file…');
@@ -508,7 +508,7 @@ async function ingest(file, existId=null) {
     fr.onload = async evt => {
       const buf = evt.target.result;
       try {
-        const bk = ePub(buf.slice(0));
+        const bk = makeEpubBook(buf.slice(0));
         await bk.ready;
         const meta   = await bk.loaded.metadata;
         const title  = meta.title  || file.name.replace(/\.epub$/i,'');
@@ -572,7 +572,7 @@ async function mountEpub(buf, bkMeta) {
   const h = viewer.clientHeight || (window.innerHeight-120);
 
   try {
-    const epubBk = ePub(buf.slice(0));
+    const epubBk = makeEpubBook(buf.slice(0));
     A.epubBook = epubBk;
     await epubBk.ready;
 
