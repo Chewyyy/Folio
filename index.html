@@ -331,6 +331,69 @@ input[type=file]{display:none}
   .reader-menu{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
 }
 
+
+/* Reader polish patch */
+#reader.dark, #reader.dark .rbody, #reader.dark #viewer, #reader.dark .rload{background:#050505!important}
+#reader.light, #reader.light .rbody, #reader.light #viewer, #reader.light .rload{background:#FBF8F2!important}
+#reader.sepia, #reader.sepia .rbody, #reader.sepia #viewer, #reader.sepia .rload{background:#F2E8D5!important}
+#viewer iframe{background:transparent!important}
+#viewer{left:0!important;right:0!important;width:100%!important}
+#reader.dark #viewer iframe{background:#050505!important}
+#reader.light #viewer iframe{background:#FBF8F2!important}
+#reader.sepia #viewer iframe{background:#F2E8D5!important}
+
+.reader-menu{
+  transform:translateY(10px) scale(.96);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .18s ease, transform .18s ease;
+}
+.reader-menu.open{
+  display:flex!important;
+  opacity:1;
+  transform:translateY(0) scale(1);
+  pointer-events:auto;
+}
+#reader.chrome .reader-menu:not(.open){display:none}
+
+.menu-fab{
+  position:absolute;right:18px;bottom:calc(72px + env(safe-area-inset-bottom,0px));
+  z-index:75;width:58px;height:58px;border-radius:22px;border:0;
+  background:rgba(72,72,76,.92);color:#fff;font-size:28px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 12px 32px rgba(0,0,0,.26);backdrop-filter:blur(18px);
+  opacity:0;transform:translateY(8px) scale(.96);pointer-events:none;
+  transition:opacity .18s ease, transform .18s ease, border-radius .18s ease;
+}
+#reader.chrome .menu-fab{
+  opacity:1;transform:translateY(0) scale(1);pointer-events:auto;
+}
+.menu-fab.open{border-radius:50%;transform:rotate(90deg) scale(1)}
+
+.reader-status-top,.reader-status-bottom{
+  position:absolute;left:0;right:0;z-index:45;text-align:center;
+  font-size:15px;font-weight:700;color:var(--read-sub);
+  pointer-events:none;opacity:.88;
+}
+.reader-status-top{
+  top:calc(20px + env(safe-area-inset-top,0px));
+  opacity:0;transition:opacity .18s ease;
+}
+#reader.chrome .reader-status-top{opacity:.9}
+.reader-status-bottom{
+  bottom:calc(16px + env(safe-area-inset-bottom,0px));
+  transition:opacity .18s ease;
+}
+#reader.chrome .reader-status-bottom{
+  bottom:calc(72px + env(safe-area-inset-bottom,0px));
+}
+#reader.dark .reader-status-top,#reader.dark .reader-status-bottom{color:#8F8F98}
+#reader.light .reader-status-top,#reader.light .reader-status-bottom{color:#7A7D86}
+#reader.sepia .reader-status-top,#reader.sepia .reader-status-bottom{color:#786957}
+
+#reader.chrome .rbot{display:none}
+#reader.chrome .rtop{border-radius:24px}
+
 </style>
 </head>
 <body>
@@ -413,6 +476,8 @@ input[type=file]{display:none}
       <div class="rtimer" id="timer">0:00</div>
     </div>
     <div class="rbody">
+      <div class="reader-status-top" id="sectionLeft"></div>
+      <div class="reader-status-bottom" id="pageStatus">Page 1</div>
       <div id="viewer"></div>
       <div class="tzone" id="tprev"></div>
       <div class="tzone" id="tmenu"></div>
@@ -423,6 +488,7 @@ input[type=file]{display:none}
       </div>
     </div>
 
+    <button class="menu-fab" id="menuFab" title="Menu">☰</button>
     <div class="reader-menu" id="readerMenu">
       <button class="menu-pill" id="contentsBtn"><span>Contents · <small id="menuPct">0%</small></span><span>☰</span></button>
       <button class="menu-pill" id="searchBtn"><span>Search Book</span><span>⌕</span></button>
@@ -603,6 +669,11 @@ const A = {
   sessP0: 0,
   readerSettings: { theme:'light', fontSize:100, animation:true },
   toc: [],
+  locReady: false,
+  currentPage: 1,
+  totalPages: 0,
+  currentPct: 0,
+  chapterLeft: '',
   chromeHideTmr: null,
 };
 
@@ -867,38 +938,81 @@ function applyReaderSettings() {
   document.querySelectorAll('[data-theme]').forEach(b => b.classList.toggle('on', b.dataset.theme === A.readerSettings.theme));
   document.getElementById('animSwitch')?.classList.toggle('on', !!A.readerSettings.animation);
   if (!A.rend) return;
+
+  const theme = A.readerSettings.theme || 'light';
+  const palettes = {
+    light: { bg:'#FBF8F2', fg:'#1A1A1A', link:'#2D6A4F' },
+    sepia: { bg:'#F2E8D5', fg:'#251A10', link:'#6B4E2E' },
+    dark:  { bg:'#050505', fg:'#F5F5F7', link:'#BFD7FF' }
+  };
+  const p = palettes[theme] || palettes.light;
+
   try {
-    A.rend.themes.register('light', {
-      body: { background:'#FBF8F2 !important', color:'#1A1A1A !important' },
-      '*': { color:'#1A1A1A' },
-      'a': { color:'#2D6A4F !important' }
+    A.rend.themes.register('folioDynamic', {
+      'html': { 'background': `${p.bg} !important` },
+      'body': { 'background': `${p.bg} !important`, 'color': `${p.fg} !important`, 'padding-left':'0 !important', 'padding-right':'0 !important' },
+      'p, div, span, section, article, li, blockquote': { 'color': `${p.fg} !important` },
+      'h1, h2, h3, h4, h5, h6': { 'color': `${p.fg} !important` },
+      'a': { 'color': `${p.link} !important` },
+      'img': { 'max-width':'100% !important' }
     });
-    A.rend.themes.register('sepia', {
-      body: { background:'#F2E8D5 !important', color:'#251A10 !important' },
-      '*': { color:'#251A10' },
-      'a': { color:'#6B4E2E !important' }
-    });
-    A.rend.themes.register('dark', {
-      body: { background:'#050505 !important', color:'#F5F5F7 !important' },
-      '*': { color:'#F5F5F7' },
-      'a': { color:'#BFD7FF !important' },
-      'img': { opacity:'0.92' }
-    });
-    A.rend.themes.select(A.readerSettings.theme || 'light');
+    A.rend.themes.select('folioDynamic');
     A.rend.themes.fontSize(`${pct}%`);
+    A.rend.views().forEach(v => {
+      try {
+        const doc = v.document;
+        doc.documentElement.style.background = p.bg;
+        doc.body.style.background = p.bg;
+        doc.body.style.color = p.fg;
+      } catch(_) {}
+    });
   } catch(e) { console.error(e); }
 }
 function showChrome(auto=true) {
   const r = document.getElementById('reader');
   if (!r?.classList.contains('active')) return;
   r.classList.add('chrome');
+  updatePageStatus(true);
   clearTimeout(A.chromeHideTmr);
   if (auto) A.chromeHideTmr = setTimeout(hideChrome, 4500);
 }
 function hideChrome() {
   clearTimeout(A.chromeHideTmr);
+  closeReaderMenu();
   document.getElementById('reader')?.classList.remove('chrome');
+  updatePageStatus(false);
 }
+
+function closeReaderMenu() {
+  document.getElementById('readerMenu')?.classList.remove('open');
+  document.getElementById('menuFab')?.classList.remove('open');
+}
+function toggleReaderMenu() {
+  const menu = document.getElementById('readerMenu');
+  const fab = document.getElementById('menuFab');
+  if (!menu || !fab) return;
+  const open = !menu.classList.contains('open');
+  menu.classList.toggle('open', open);
+  fab.classList.toggle('open', open);
+  showChrome(false);
+}
+function updatePageStatus(showDetails = document.getElementById('reader')?.classList.contains('chrome')) {
+  const pct = Math.round((A.currentPct || 0) * 100);
+  const cur = Math.max(1, Math.round(A.currentPage || 1));
+  const total = Math.max(cur, Math.round(A.totalPages || 0));
+  const bottom = document.getElementById('pageStatus');
+  const top = document.getElementById('sectionLeft');
+  const menuPct = document.getElementById('menuPct');
+
+  if (bottom) {
+    bottom.textContent = showDetails && total
+      ? `Page ${cur} of ${total} · ${pct}%`
+      : `Page ${cur}`;
+  }
+  if (top) top.textContent = showDetails ? (A.chapterLeft || '') : '';
+  if (menuPct) menuPct.textContent = `${pct}%`;
+}
+
 function toggleChrome() {
   const r = document.getElementById('reader');
   if (!r) return;
@@ -906,6 +1020,7 @@ function toggleChrome() {
   else showChrome(true);
 }
 function openSheet(id) {
+  closeReaderMenu();
   showChrome(false);
   document.getElementById(id)?.classList.add('on');
 }
@@ -950,15 +1065,18 @@ function wireReaderControlsOnce() {
 
   document.getElementById('tmenu')?.addEventListener('click', e => {
     e.stopPropagation();
+    closeReaderMenu();
     toggleChrome();
   });
   document.getElementById('tprev')?.addEventListener('click', e => {
     e.stopPropagation();
+    closeReaderMenu();
     hideChrome();
     A.rend?.prev();
   });
   document.getElementById('tnext')?.addEventListener('click', e => {
     e.stopPropagation();
+    closeReaderMenu();
     hideChrome();
     A.rend?.next();
   });
@@ -1049,10 +1167,12 @@ async function mountEpub(buf, bkMeta) {
     renderToc();
     applyReaderSettings();
 
-    epubBk.locations.generate(1500).catch(()=>{});
+    epubBk.locations.generate(1500).then(()=>{ A.totalPages = epubBk.locations.total || epubBk.locations.length?.() || A.totalPages; updatePageStatus(); }).catch(()=>{});
 
     const saved = A.progress[bkMeta.id]?.cfi;
     await rend.display(saved||undefined);
+    applyReaderSettings();
+    updatePageStatus(false);
     dbg('Rendered first location');
 
     document.getElementById('rload').style.display = 'none';
@@ -1062,13 +1182,34 @@ async function mountEpub(buf, bkMeta) {
       const pct = Math.round(p.pct*100);
       document.getElementById('rpf').style.width = `${pct}%`;
       document.getElementById('rpl').textContent = `${pct}%`;
+      A.currentPct = p.pct || 0;
+      updatePageStatus(false);
     }
 
+    rend.on('rendered', () => {
+      applyReaderSettings();
+    });
+
     rend.on('relocated', loc => {
-      const pct = loc.start.percentage||0;
+      const pct = loc.start.percentage || 0;
+      A.currentPct = pct;
+
+      let page = 1, total = 0;
+      try {
+        page = epubBk.locations.locationFromCfi(loc.start.cfi) || 1;
+        total = epubBk.locations.total || epubBk.locations.length?.() || 0;
+      } catch(_) {}
+      if (!page || page < 1) page = Math.max(1, Math.round(pct * (total || 1)));
+      A.currentPage = page;
+      A.totalPages = total;
+
+      const left = Math.max(0, (loc.start.displayed?.total || 0) - (loc.start.displayed?.page || 0));
+      A.chapterLeft = left ? `${left} page${left === 1 ? '' : 's'} left in chapter` : '';
+
       document.getElementById('rpf').style.width  = `${Math.round(pct*100)}%`;
       document.getElementById('rpl').textContent  = `${Math.round(pct*100)}%`;
-      document.getElementById('menuPct').textContent = `${Math.round(pct*100)}%`;
+      updatePageStatus();
+
       if (!A.progress[bkMeta.id]) A.progress[bkMeta.id]={};
       A.progress[bkMeta.id].cfi      = loc.start.cfi;
       A.progress[bkMeta.id].pct      = pct;
