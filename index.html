@@ -245,14 +245,18 @@ html,body{height:100%;height:100dvh;background:#C8C3BC;
   color:var(--accent);font-size:12px;font-weight:800}
 .reorderbar.on{display:flex}
 .reorderbar button{border:0;background:var(--accent);color:#fff;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:800}
-.bgrid.reorder .bcard{cursor:grab;touch-action:none}
-.bgrid.reorder .bcard:active,.bgrid.reorder .bcard.dragging{cursor:grabbing}
-.bgrid.reorder .bcard.dragging{opacity:.62;transform:scale(.96);box-shadow:var(--shadowLg);z-index:5}
-.bgrid.reorder .bcard::after{content:'↕';position:absolute;top:7px;left:7px;width:28px;height:28px;border-radius:50%;
-  background:rgba(0,0,0,.50);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;
-  backdrop-filter:blur(4px);opacity:0;transition:opacity .15s}
-.bgrid.reorder .bcard::after{opacity:1}
 .bgrid.reorder .morebtn{display:none}
+.bgrid.reorder .bcard{cursor:grab}
+.bcard.reorder-hold{transform:scale(.985);box-shadow:var(--shadowLg)}
+.bcard.dragging{cursor:grabbing!important;position:fixed!important;z-index:1000!important;
+  transform:scale(1.045)!important;box-shadow:0 22px 45px rgba(0,0,0,.28)!important;
+  opacity:.96;pointer-events:none;transition:none!important;will-change:left,top,transform}
+.bcard.dragging .morebtn{display:none}
+.bcard.drop-anim{transition:transform .18s cubic-bezier(.22,1,.36,1),box-shadow .18s ease}
+.book-placeholder{border-radius:var(--r);background:rgba(45,106,79,.10);outline:2px dashed rgba(45,106,79,.25);
+  min-height:180px;box-shadow:none;transition:transform .16s ease,opacity .16s ease;opacity:.8}
+body.library-reordering{overflow:hidden;-webkit-user-select:none;user-select:none}
+body.library-reordering *{cursor:grabbing!important}
 
 .data-card{background:var(--card);border-radius:var(--r);padding:16px;box-shadow:var(--shadow);margin-bottom:20px}
 .data-card h3{font-size:14px;font-weight:700;margin-bottom:12px}
@@ -518,7 +522,7 @@ body.reader-open{background:var(--read-bg)!important}
         <div class="scard"><span class="v" id="mstreak">0</span><span class="l">Day Streak</span></div>
       </div>
       <div class="sec" id="sectitle">Your Library</div>
-      <div class="reorderbar" id="reorderBar"><span>Drag books to reorganize your library.</span><button id="reorderDone" type="button">Done</button></div>
+      <div class="reorderbar" id="reorderBar"><span>Press and hold a book, then drag it.</span><button id="reorderDone" type="button">Done</button></div>
       <div class="bgrid" id="bgrid"></div>
       <div class="empty" id="empt" style="display:none">
         <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -871,7 +875,7 @@ body.reader-open{background:var(--read-bg)!important}
 </div>
 
 <script>
-const FOLIO_VERSION = 'v16-library-data';
+const FOLIO_VERSION = 'v17-apple-reorder';
 const CHARS_PER_PAGE = 1800;   // ≈ Apple Books / print pagination density
 
 function dbg(msg) {}
@@ -957,7 +961,7 @@ const A = {
   calY: new Date().getFullYear(), calM: new Date().getMonth(),
   daySheetKey: null, finishBookId: null,
   longPressTmr: null, longPressed: false,
-  reorderMode: false, draggingBookEl: null, savedFolderName: '',
+  reorderMode: false, draggingBookEl: null, dragPlaceholder: null, savedFolderName: '',
 };
 
 const STATE_KEYS = ['f_books','f_sessions','f_progress','f_reader_settings','f_goal','f_bookmarks','f_saved_folder_name'];
@@ -1248,7 +1252,7 @@ function renderLib() {
         <div class="btitle">${esc(bk.title)}</div>
         <div class="bauth">${esc(bk.author)}</div>
         <div class="pt"><div class="pf" style="width:${pct}%"></div></div>
-        <div class="pl">${A.reorderMode ? 'Drag to reorder' : stat}</div>
+        <div class="pl">${A.reorderMode ? 'Hold and drag' : stat}</div>
       </div>
     </div>`;
   }).join('');
@@ -1256,46 +1260,14 @@ function renderLib() {
   grid.querySelectorAll('.bcard').forEach(el => {
     el.addEventListener('selectstart', e => e.preventDefault());
     el.addEventListener('dragstart', e => e.preventDefault());
-    if (A.reorderMode) wireLibraryReorderCard(el);
+    wireAppleBooksReorderCard(el);
     el.addEventListener('click', e => {
       if (A.reorderMode) return;
       if (e.target.closest('.morebtn')) return;
       if (A.longPressed) { A.longPressed = false; return; }
       openReader(el.dataset.id);
     });
-    el.addEventListener('contextmenu', e => { e.preventDefault(); if (!A.reorderMode) openBookSheet(el.dataset.id); });
-    el.addEventListener('touchstart', e => {
-      if (A.reorderMode) return;
-      clearTimeout(A.longPressTmr);
-      A.longPressed = false;
-      const t = e.touches[0];
-      const sx = t.clientX, sy = t.clientY;
-      let pressVisualTmr = setTimeout(() => el.classList.add('pressing'), 90);
-      const move = ev => {
-        const tt = ev.touches[0];
-        if (Math.abs(tt.clientX-sx) > 10 || Math.abs(tt.clientY-sy) > 10) cancel();
-      };
-      const cancel = () => {
-        clearTimeout(A.longPressTmr);
-        clearTimeout(pressVisualTmr);
-        el.classList.remove('pressing');
-        el.removeEventListener('touchmove', move);
-        el.removeEventListener('touchend', cancel);
-        el.removeEventListener('touchcancel', cancel);
-      };
-      el.addEventListener('touchmove', move, {passive:true});
-      el.addEventListener('touchend', cancel, {passive:true});
-      el.addEventListener('touchcancel', cancel, {passive:true});
-      A.longPressTmr = setTimeout(() => {
-        A.longPressed = true;
-        cancel();
-        el.classList.add('longpressing');
-        setTimeout(() => el.classList.remove('longpressing'), 240);
-        window.getSelection?.().removeAllRanges?.();
-        if (navigator.vibrate) navigator.vibrate(12);
-        openBookSheet(el.dataset.id);
-      }, 480);
-    }, {passive:true});
+    el.addEventListener('contextmenu', e => e.preventDefault());
   });
   grid.querySelectorAll('.morebtn').forEach(b =>
     b.addEventListener('click', e => { e.stopPropagation(); if (!A.reorderMode) openBookSheet(b.dataset.id); }));
@@ -1304,7 +1276,7 @@ function renderLib() {
 function setReorderMode(on) {
   A.reorderMode = !!on;
   renderLib();
-  toast(A.reorderMode ? 'Reorder mode on' : 'Library order saved');
+  toast(A.reorderMode ? 'Press and hold a book, then drag it' : 'Library order saved');
 }
 
 function updateBookOrderFromDom() {
@@ -1317,43 +1289,189 @@ function updateBookOrderFromDom() {
   persist();
 }
 
-function wireLibraryReorderCard(el) {
-  el.addEventListener('pointerdown', e => {
-    if (!A.reorderMode || e.target.closest('.morebtn')) return;
-    e.preventDefault();
-    A.draggingBookEl = el;
-    el.classList.add('dragging');
-    try { el.setPointerCapture(e.pointerId); } catch(_) {}
-    window.getSelection?.().removeAllRanges?.();
-  });
+function cancelLibraryHold() {
+  clearTimeout(A.longPressTmr);
+  A.longPressTmr = null;
+  document.querySelectorAll('.bcard.reorder-hold').forEach(el => el.classList.remove('reorder-hold'));
 }
 
-document.addEventListener('pointermove', e => {
-  const drag = A.draggingBookEl;
-  if (!A.reorderMode || !drag) return;
-  e.preventDefault();
-  drag.style.visibility = 'hidden';
-  const target = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('#bgrid .bcard');
-  drag.style.visibility = '';
-  if (!target || target === drag) return;
+function wireAppleBooksReorderCard(el) {
+  el.addEventListener('pointerdown', e => {
+    if (e.button !== undefined && e.button !== 0) return;
+    if (e.target.closest('.morebtn')) return;
+    if (A.draggingBookEl) return;
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    let active = false;
+    let pointerId = e.pointerId;
+
+    cancelLibraryHold();
+    A.longPressed = false;
+
+    const moveBeforeDrag = ev => {
+      if (ev.pointerId !== pointerId) return;
+      if (Math.abs(ev.clientX - startX) > 9 || Math.abs(ev.clientY - startY) > 9) cleanup(true);
+    };
+    const upBeforeDrag = ev => {
+      if (ev.pointerId !== pointerId) return;
+      cleanup(true);
+    };
+    const cancelBeforeDrag = ev => {
+      if (ev.pointerId !== pointerId) return;
+      cleanup(true);
+    };
+    const cleanup = removeHold => {
+      clearTimeout(A.longPressTmr);
+      A.longPressTmr = null;
+      if (removeHold) el.classList.remove('reorder-hold');
+      document.removeEventListener('pointermove', moveBeforeDrag, true);
+      document.removeEventListener('pointerup', upBeforeDrag, true);
+      document.removeEventListener('pointercancel', cancelBeforeDrag, true);
+    };
+
+    document.addEventListener('pointermove', moveBeforeDrag, true);
+    document.addEventListener('pointerup', upBeforeDrag, true);
+    document.addEventListener('pointercancel', cancelBeforeDrag, true);
+
+    A.longPressTmr = setTimeout(() => {
+      active = true;
+      cleanup(false);
+      beginAppleBooksReorder(el, e, startX, startY, pointerId);
+    }, A.reorderMode ? 220 : 360);
+
+    setTimeout(() => {
+      if (!active && A.longPressTmr) el.classList.add('reorder-hold');
+    }, 110);
+  }, { passive: true });
+}
+
+function beginAppleBooksReorder(el, startEvent, startX, startY, pointerId) {
   const grid = document.getElementById('bgrid');
-  const r = target.getBoundingClientRect();
-  const before = e.clientY < r.top + r.height/2;
-  grid.insertBefore(drag, before ? target : target.nextSibling);
-});
+  if (!grid || !el || !grid.contains(el)) return;
 
-document.addEventListener('pointerup', async e => {
+  A.longPressed = true;
+  A.draggingBookEl = el;
+  window.getSelection?.().removeAllRanges?.();
+  if (navigator.vibrate) navigator.vibrate(10);
+
+  const rect = el.getBoundingClientRect();
+  const placeholder = document.createElement('div');
+  placeholder.className = 'book-placeholder';
+  placeholder.style.width = `${rect.width}px`;
+  placeholder.style.height = `${rect.height}px`;
+  placeholder.dataset.placeholder = '1';
+  grid.insertBefore(placeholder, el.nextSibling);
+  A.dragPlaceholder = placeholder;
+
+  el.classList.remove('reorder-hold');
+  el.classList.add('dragging');
+  el.style.width = `${rect.width}px`;
+  el.style.height = `${rect.height}px`;
+  el.style.left = `${rect.left}px`;
+  el.style.top = `${rect.top}px`;
+  document.body.classList.add('library-reordering');
+  try { el.setPointerCapture(pointerId); } catch(_) {}
+
+  A.dragOffsetX = startX - rect.left;
+  A.dragOffsetY = startY - rect.top;
+  moveLiftedBook(startX, startY);
+
+  const onMove = ev => {
+    if (ev.pointerId !== pointerId) return;
+    ev.preventDefault();
+    moveLiftedBook(ev.clientX, ev.clientY);
+    autoScrollLibraryDuringDrag(ev.clientY);
+    reorderPlaceholderAt(ev.clientX, ev.clientY);
+  };
+  const onEnd = ev => {
+    if (ev.pointerId !== pointerId) return;
+    ev.preventDefault();
+    finishAppleBooksReorder(true);
+    document.removeEventListener('pointermove', onMove, true);
+    document.removeEventListener('pointerup', onEnd, true);
+    document.removeEventListener('pointercancel', onCancel, true);
+  };
+  const onCancel = ev => {
+    if (ev.pointerId !== pointerId) return;
+    finishAppleBooksReorder(false);
+    document.removeEventListener('pointermove', onMove, true);
+    document.removeEventListener('pointerup', onEnd, true);
+    document.removeEventListener('pointercancel', onCancel, true);
+  };
+
+  document.addEventListener('pointermove', onMove, { capture:true, passive:false });
+  document.addEventListener('pointerup', onEnd, { capture:true, passive:false });
+  document.addEventListener('pointercancel', onCancel, { capture:true, passive:false });
+}
+
+function moveLiftedBook(x, y) {
+  const el = A.draggingBookEl;
+  if (!el) return;
+  el.style.left = `${x - (A.dragOffsetX || 0)}px`;
+  el.style.top = `${y - (A.dragOffsetY || 0)}px`;
+}
+
+
+function autoScrollLibraryDuringDrag(y) {
+  const scroller = document.querySelector('#lib .sa');
+  if (!scroller) return;
+  const r = scroller.getBoundingClientRect();
+  const edge = 74;
+  let delta = 0;
+  if (y < r.top + edge) delta = -Math.ceil((r.top + edge - y) / 5);
+  if (y > r.bottom - edge) delta = Math.ceil((y - (r.bottom - edge)) / 5);
+  if (delta) scroller.scrollBy(0, delta);
+}
+
+function reorderPlaceholderAt(x, y) {
   const drag = A.draggingBookEl;
-  if (!drag) return;
-  drag.classList.remove('dragging');
-  A.draggingBookEl = null;
-  updateBookOrderFromDom();
-});
+  const ph = A.dragPlaceholder;
+  const grid = document.getElementById('bgrid');
+  if (!drag || !ph || !grid) return;
 
-document.addEventListener('pointercancel', () => {
-  if (A.draggingBookEl) A.draggingBookEl.classList.remove('dragging');
+  drag.style.visibility = 'hidden';
+  const target = document.elementFromPoint(x, y)?.closest?.('#bgrid .bcard');
+  drag.style.visibility = '';
+  if (!target || target === drag || target === ph) return;
+
+  const r = target.getBoundingClientRect();
+  const midX = r.left + r.width / 2;
+  const midY = r.top + r.height / 2;
+  const mostlySameRow = y > r.top + r.height * .25 && y < r.bottom - r.height * .25;
+  const before = mostlySameRow ? x < midX : y < midY;
+  grid.insertBefore(ph, before ? target : target.nextSibling);
+}
+
+async function finishAppleBooksReorder(commit) {
+  const drag = A.draggingBookEl;
+  const ph = A.dragPlaceholder;
+  cancelLibraryHold();
+  if (!drag) return;
+
+  const targetRect = ph ? ph.getBoundingClientRect() : null;
+  if (commit && ph && ph.parentNode) ph.parentNode.insertBefore(drag, ph);
+  if (ph?.parentNode) ph.parentNode.removeChild(ph);
+
+  drag.classList.remove('dragging');
+  drag.classList.add('drop-anim');
+  drag.style.width = '';
+  drag.style.height = '';
+  drag.style.left = '';
+  drag.style.top = '';
+  drag.style.position = '';
+  drag.style.zIndex = '';
+  drag.style.pointerEvents = '';
+  document.body.classList.remove('library-reordering');
+
   A.draggingBookEl = null;
-});
+  A.dragPlaceholder = null;
+  setTimeout(() => drag.classList.remove('drop-anim'), 220);
+
+  if (commit) await updateBookOrderFromDom();
+  A.longPressed = true;
+  setTimeout(() => { A.longPressed = false; }, 300);
+}
 
 document.getElementById('reorderDone')?.addEventListener('click', () => setReorderMode(false));
 
