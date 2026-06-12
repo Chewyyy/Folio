@@ -344,18 +344,34 @@ async function hydrate() {
 }
 
 async function storeEpub(id, b64) {
-  if (!window.storage) return false;
-  try { await window.storage.set(`f_epub_${id}`, b64); return true; }
-  catch(e) { return false; }
+  try {
+    await idbSet(`f_epub_${id}`, b64);
+    return true;
+  } catch(e) {
+    console.error('EPUB IndexedDB store failed:', e);
+    return false;
+  }
 }
 async function getEpub(id) {
-  if (!window.storage) return null;
-  try { const r = await window.storage.get(`f_epub_${id}`); return r ? r.value : null; }
-  catch(e) { return null; }
+  try {
+    // First try IndexedDB, which is used by the mobile/browser version.
+    const v = await idbGet(`f_epub_${id}`);
+    if (v) return v;
+
+    // Fallback for older saves that used localStorage/window.storage.
+    if (window.storage) {
+      const r = await window.storage.get(`f_epub_${id}`);
+      return r ? r.value : null;
+    }
+    return null;
+  } catch(e) {
+    console.error('EPUB load failed:', e);
+    return null;
+  }
 }
 async function dropEpub(id) {
-  if (!window.storage) return;
-  try { await window.storage.delete(`f_epub_${id}`); } catch(e) {}
+  try { await idbDelete(`f_epub_${id}`); } catch(e) {}
+  try { if (window.storage) await window.storage.delete(`f_epub_${id}`); } catch(e) {}
 }
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -527,7 +543,7 @@ async function ingest(file, existId=null) {
         A.books.push(entry);
 
         const ok = await storeEpub(id, ab2b64(buf));
-        if (!ok) toast('File too large to cache. Re-upload to read.', 4000);
+        if (!ok) toast('Could not cache EPUB. Try a smaller file or clear Safari website data.', 5000);
 
         await persist(); renderLib();
         toast(`"${title}" added!`);
@@ -557,7 +573,7 @@ async function openReader(bookId) {
   const b64 = await getEpub(bookId);
   if (!b64) {
     document.getElementById('rload').style.display = 'none';
-    const ok = confirm(`"${bk.title}" needs to be re-uploaded to read. Select the file?`);
+    const ok = confirm(`"${bk.title}" was saved before EPUB storage was fixed. Re-upload it once to read. Select the file?`);
     if (ok) { fi.dataset.reopen = bookId; fi.click(); }
     else closeReader(false);
     return;
