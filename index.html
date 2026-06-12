@@ -7,7 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Folio">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#F6F3ED">
+<meta name="theme-color" content="#F6F3ED" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101216" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
 <title>Folio</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -62,6 +64,26 @@ html,body{height:100%;height:100dvh;background:#C8C3BC;
 .nbtn.active{color:var(--accent)}
 
 .sa{flex:1;overflow-y:auto;padding:16px;overscroll-behavior:contain}
+
+
+.hdr-actions{display:flex;align-items:center;gap:8px}
+.home-goal-btn{border:0;background:transparent;padding:0;width:46px;height:46px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:50%}
+.home-goal-btn:active{transform:scale(.96)}
+.home-goal-ring{--goalDeg:0deg;width:42px;height:42px;border-radius:50%;background:conic-gradient(#0A84FF var(--goalDeg),rgba(128,128,128,.24) 0);display:grid;place-items:center;box-shadow:var(--shadow);position:relative}
+.home-goal-ring::before{content:'';position:absolute;inset:5px;border-radius:50%;background:var(--card);box-shadow:inset 0 0 0 1px rgba(128,128,128,.10)}
+.home-goal-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.home-goal-inner span{font-size:15px;font-weight:900;color:#0A84FF;font-variant-numeric:tabular-nums}
+.home-goal-inner small{font-size:8px;font-weight:800;color:var(--sub);margin-top:1px;font-variant-numeric:tabular-nums}
+.continue-card{width:100%;border:0;background:linear-gradient(135deg,rgba(45,106,79,.18),rgba(201,150,46,.12)),var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:10px 12px;margin-bottom:16px;display:flex;align-items:center;gap:12px;color:var(--text);text-align:left;cursor:pointer;overflow:hidden;position:relative}
+.continue-card::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.10),transparent);pointer-events:none}
+.continue-card:active{transform:scale(.985)}
+.continue-cover{width:42px;height:62px;border-radius:6px;flex-shrink:0;background:linear-gradient(135deg,#2D6A4F,#52B788);box-shadow:0 3px 10px rgba(0,0,0,.22);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:19px;position:relative;z-index:1}
+.continue-cover img{width:100%;height:100%;object-fit:cover;display:block}
+.continue-info{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px;position:relative;z-index:1}
+.continue-label{font-size:11px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.6px}
+.continue-title{font-size:15px;font-weight:800;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.continue-meta{font-size:12px;color:var(--sub);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.continue-more{font-size:24px;color:var(--sub);font-weight:700;position:relative;z-index:1}
 
 .strip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:22px}
 .scard{background:var(--card);border-radius:var(--rsm);padding:12px 8px;text-align:center;
@@ -291,6 +313,58 @@ input[type=file]{display:none}
   #app{max-width:none;width:100vw;height:100vh;height:100dvh;box-shadow:none}
   body{background:var(--bg)}
 }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg:       #101216;
+    --card:     #1A1D22;
+    --accent:   #5FCB9E;
+    --acc2:     #73D9AF;
+    --text:     #F2F4F7;
+    --sub:      #A3AAB5;
+    --border:   #2B3038;
+    --rbg:      #14171B;
+    --gold:     #F3C15F;
+    --shadow:   0 2px 14px rgba(0,0,0,0.36);
+    --shadowLg: 0 12px 34px rgba(0,0,0,0.48);
+  }
+  html,body{background:#050607;color:var(--text)}
+  #app{background:var(--bg);box-shadow:0 0 80px rgba(0,0,0,0.75)}
+  .hdr{background:var(--bg);border-bottom-color:var(--border)}
+  .bnav{background:rgba(18,20,24,.92);border-top-color:var(--border)}
+  .ibtn:hover{background:rgba(95,203,158,.13)}
+  .ctabtn:hover{background:#48A97F}
+  .header-debug{background:rgba(95,203,158,.12);border-color:rgba(95,203,158,.22);color:var(--accent)}
+  .header-debug a{background:var(--accent);color:#07100C}
+  .goalcard{background:linear-gradient(135deg,#1F7A5C,#235C48)}
+  .goaledit{background:rgba(255,255,255,.14)}
+  .calnav button,.data-actions button{background:rgba(95,203,158,.12);color:var(--accent)}
+  .calday:active{background:rgba(95,203,158,.10)}
+  .calday.future{color:#4D5561}
+  .tlcov,.yb-cover{background:linear-gradient(135deg,#235C48,#3BAE82)}
+  .yb-check,.select-badge,.multi-count-badge{background:#0A84FF;color:#fff}
+  .yb-more{background:rgba(0,0,0,.52)}
+  .reorderbar{background:rgba(95,203,158,.12);border-color:rgba(95,203,158,.22);color:var(--accent)}
+  .book-placeholder{background:rgba(95,203,158,.10);outline-color:rgba(95,203,158,.28)}
+  .data-actions button.primary,.reorderbar button{background:var(--accent);color:#07100C}
+  .app-sheet{background:var(--bg)}
+  .app-sheet-backdrop{background:rgba(0,0,0,.52)}
+  .grabber{background:rgba(255,255,255,.22)}
+  .frm input,.frm select{background:var(--card);color:var(--text);border-color:var(--border)}
+  .frm input::placeholder{color:#6E7580}
+  .frm input:focus,.frm select:focus{border-color:var(--accent)}
+  .btnrow .ghost{background:var(--card);color:var(--text);border-color:var(--border)}
+  .gchip{background:var(--card);color:var(--text);border-color:var(--border)}
+  .gchip.on{background:rgba(95,203,158,.12);border-color:var(--accent);color:var(--accent)}
+  .as-btn.danger,.btnrow .ghost.danger{color:#FF6B61}
+  .morebtn{background:rgba(0,0,0,.62)}
+  .bcard.selected{outline-color:#0A84FF;box-shadow:0 10px 30px rgba(10,132,255,.28),var(--shadowLg)}
+  .select-badge{border-color:var(--card)}
+  .continue-card{background:linear-gradient(135deg,rgba(95,203,158,.16),rgba(243,193,95,.10)),var(--card)}
+  .home-goal-ring::before{background:var(--card)}
+  .toast{background:rgba(242,244,247,.92);color:#101216}
+}
 @media (prefers-reduced-motion: reduce){
   *{transition-duration:.01ms!important;animation-duration:.01ms!important}
 }
@@ -503,8 +577,8 @@ body.reader-open{background:var(--read-bg)!important}
 </style>
 </head>
 <body>
-<input type="file" id="fi" accept=".epub,application/epub+zip" multiple>
-<input type="file" id="folderFi" accept=".epub,application/epub+zip" multiple webkitdirectory directory>
+<input type="file" id="fi" multiple>
+<input type="file" id="folderFi" multiple webkitdirectory directory>
 <input type="file" id="backupFi" accept=".json,.folio-backup.json,application/json">
 <div id="app">
 
@@ -513,18 +587,30 @@ body.reader-open{background:var(--read-bg)!important}
     <div class="hdr">
       <div class="hdr-left">
         <h1>Folio</h1>
-        <div class="header-debug" id="debugRefresh">
-          <span class="ver" id="versionLabel">v20-drag-multi</span>
-          <a id="refreshBtn" href="./" role="button">Update</a>
-        </div>
       </div>
-      <button class="ibtn" id="addbtn" title="Add Book">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
-        </svg>
-      </button>
+      <div class="hdr-actions">
+        <button class="home-goal-btn" id="homeGoalBtn" type="button" title="Today's reading goal">
+          <span class="home-goal-ring" id="homeGoalRing">
+            <span class="home-goal-inner"><span id="homeGoalMins">0</span><small id="homeGoalTarget">15</small></span>
+          </span>
+        </button>
+        <button class="ibtn" id="addbtn" title="Add Book">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+          </svg>
+        </button>
+      </div>
     </div>
     <div class="sa">
+      <button class="continue-card" id="continueCard" type="button" style="display:none">
+        <span class="continue-cover" id="continueCover"></span>
+        <span class="continue-info">
+          <span class="continue-label">Continue Reading</span>
+          <span class="continue-title" id="continueTitle"></span>
+          <span class="continue-meta" id="continueMeta"></span>
+        </span>
+        <span class="continue-more">›</span>
+      </button>
       <div class="strip">
         <div class="scard"><span class="v" id="mbooks">0</span><span class="l">Books</span></div>
         <div class="scard"><span class="v" id="mtime">0m</span><span class="l">Read</span></div>
@@ -883,7 +969,7 @@ body.reader-open{background:var(--read-bg)!important}
 </div>
 
 <script>
-const FOLIO_VERSION = 'v20-drag-multi';
+const FOLIO_VERSION = 'v24-clean-header';
 const CHARS_PER_PAGE = 1800;   // ≈ Apple Books / print pagination density
 
 function dbg(msg) {}
@@ -1205,6 +1291,12 @@ function goto(sid) {
 }
 document.querySelectorAll('.nbtn').forEach(b =>
   b.addEventListener('click', () => goto(b.dataset.s)));
+document.getElementById('continueCard')?.addEventListener('click', () => {
+  const id = document.getElementById('continueCard')?.dataset.id;
+  if (id) openReader(id);
+});
+document.getElementById('homeGoalBtn')?.addEventListener('click', () => goto('journal'));
+
 
 /* ── App sheets (bottom drawers outside the reader) ────────────── */
 function openAppSheet(id){ document.getElementById(id)?.classList.add('on'); }
@@ -1227,6 +1319,8 @@ function renderLib() {
   document.getElementById('mbooks').textContent  = A.books.length;
   document.getElementById('mtime').textContent   = fmt(totalSecs);
   document.getElementById('mstreak').textContent = currentStreak();
+  renderHomeGoalRing();
+  renderContinueCard();
 
   const grid = document.getElementById('bgrid');
   const empt = document.getElementById('empt');
@@ -1299,6 +1393,42 @@ function toggleBookSelection(id) {
   A.selectionMode = A.selectedBookIds.size > 0;
   renderLib();
   toast(A.selectionMode ? `${A.selectedBookIds.size} selected · hold one selected book to move them together` : 'Selection cleared', 1800);
+}
+
+function getContinueBook() {
+  const candidates = A.books
+    .filter(b => !b.finished && A.progress[b.id] && ((A.progress[b.id].pct || 0) > 0 || A.progress[b.id].lastRead))
+    .sort((a,b) => (A.progress[b.id]?.lastRead || 0) - (A.progress[a.id]?.lastRead || 0));
+  return candidates[0] || null;
+}
+
+function renderContinueCard() {
+  const card = document.getElementById('continueCard');
+  if (!card) return;
+  const bk = getContinueBook();
+  if (!bk) { card.style.display = 'none'; card.dataset.id = ''; return; }
+  const prog = A.progress[bk.id] || {};
+  const pct = Math.max(0, Math.min(100, Math.round((prog.pct || 0) * 100)));
+  const cover = document.getElementById('continueCover');
+  const grad = GRADS[bk.id.charCodeAt(0) % GRADS.length];
+  cover.innerHTML = bk.cover ? `<img src="${bk.cover}" alt="">` : `<span style="background:${grad};width:100%;height:100%;display:flex;align-items:center;justify-content:center">📖</span>`;
+  document.getElementById('continueTitle').textContent = bk.title || 'Untitled Book';
+  document.getElementById('continueMeta').textContent = `${bk.author || 'Unknown Author'} · ${pct}%`;
+  card.dataset.id = bk.id;
+  card.style.display = 'flex';
+}
+
+function renderHomeGoalRing() {
+  const ring = document.getElementById('homeGoalRing');
+  if (!ring) return;
+  const goal = goalMinutes();
+  const mins = Math.floor(todaySecs() / 60);
+  const pct = Math.max(0, Math.min(1, mins / goal));
+  ring.style.setProperty('--goalDeg', `${Math.round(pct * 360)}deg`);
+  ring.classList.toggle('met', mins >= goal);
+  document.getElementById('homeGoalMins').textContent = Math.min(999, mins);
+  document.getElementById('homeGoalTarget').textContent = goal;
+  ring.title = `${mins} of ${goal} minutes today`;
 }
 
 function clearBookSelection() {
@@ -1680,7 +1810,14 @@ async function openNativeEpubImport() {
       const handles = await window.showOpenFilePicker({
         multiple: true,
         excludeAcceptAllOption: false,
-        types: [{ description: 'EPUB books', accept: { 'application/epub+zip': ['.epub'] } }]
+        types: [{
+          description: 'EPUB books',
+          accept: {
+            'application/epub+zip': ['.epub'],
+            'application/zip': ['.epub', '.zip'],
+            'application/octet-stream': ['.epub', '.zip']
+          }
+        }]
       });
       const files = await Promise.all(handles.map(h => h.getFile()));
       await batchImportFiles(files, { source: 'native-file-picker' });
@@ -1695,7 +1832,7 @@ async function openNativeEpubImport() {
 }
 
 fi.addEventListener('change', async e => {
-  const files = Array.from(e.target.files || []).filter(f => /\.epub$/i.test(f.name));
+  const files = Array.from(e.target.files || []);
   const reopen = fi.dataset.reopen; fi.removeAttribute('data-reopen');
   if (!files.length) { fi.value=''; return; }
 
@@ -1716,7 +1853,7 @@ fi.addEventListener('change', async e => {
 });
 
 folderFi.addEventListener('change', async e => {
-  const files = Array.from(e.target.files || []).filter(f => /\.epub$/i.test(f.name));
+  const files = Array.from(e.target.files || []);
   if (!files.length) { folderFi.value=''; return; }
   const firstPath = files[0].webkitRelativePath || files[0].name;
   A.savedFolderName = firstPath.includes('/') ? firstPath.split('/')[0] : 'Selected files';
@@ -1731,8 +1868,8 @@ backupFi.addEventListener('change', async e => {
 });
 
 async function batchImportFiles(files, opts={}) {
-  const list = Array.from(files || []).filter(f => /\.epub$/i.test(f.name));
-  if (!list.length) { toast('No EPUB files selected'); return []; }
+  const list = Array.from(files || []).filter(f => f && !/^\./.test(f.name || ''));
+  if (!list.length) { toast('No files selected'); return []; }
   toast(`Importing ${list.length} EPUB${list.length===1?'':'s'}…`, 8000);
   const ids = [];
   let ok = 0;
@@ -1786,7 +1923,7 @@ async function verifyFolderPermission(handle) {
 
 async function* walkFolder(handle, path='') {
   for await (const [name, entry] of handle.entries()) {
-    if (entry.kind === 'file' && /\.epub$/i.test(name)) {
+    if (entry.kind === 'file' && !/^\./.test(name)) {
       const file = await entry.getFile();
       try { Object.defineProperty(file, '_folioPath', { value: path + name, configurable: true }); } catch(_) { file._folioPath = path + name; }
       yield file;
@@ -1798,6 +1935,21 @@ async function* walkFolder(handle, path='') {
 
 function nextBookOrder() {
   return A.books.length ? Math.max(...A.books.map(b => Number(b.order)||0)) + 1 : 0;
+}
+
+async function looksLikeEpubBuffer(buf) {
+  try {
+    if (!buf || buf.byteLength < 4) return false;
+    const zip = await JSZip.loadAsync(buf.slice(0));
+    const mime = zip.file('mimetype');
+    if (mime) {
+      const txt = (await mime.async('string')).trim();
+      if (txt === 'application/epub+zip') return true;
+    }
+    return !!zip.file('META-INF/container.xml');
+  } catch(_) {
+    return false;
+  }
 }
 
 function findExistingBookForFile(file, title, author) {
@@ -1818,6 +1970,7 @@ async function ingest(file, existId=null, opts={}) {
     fr.onload = async evt => {
       const buf = evt.target.result;
       try {
+        if (!(await looksLikeEpubBuffer(buf))) throw new Error('Selected file is not an EPUB container');
         const bk = makeEpubBook(buf.slice(0));
         await bk.ready;
         const meta   = await bk.loaded.metadata;
@@ -1848,7 +2001,7 @@ async function ingest(file, existId=null, opts={}) {
         res(id);
       } catch(err) {
         console.error('Import failed:', err);
-        toast('Import failed — is this a valid EPUB?');
+        toast(`Skipped ${file.name || 'file'} — not a valid EPUB`);
         res(null);
       }
     };
@@ -1873,6 +2026,7 @@ function renderGoal() {
   else                   msg.textContent = 'Read to keep your streak alive';
   document.getElementById('jstreak').textContent = currentStreak();
   document.getElementById('jbest').textContent   = bestStreak();
+  renderHomeGoalRing();
 }
 
 const GOAL_PRESETS = [5,10,15,20,30,45,60,90];
@@ -2920,15 +3074,8 @@ document.addEventListener('visibilitychange', () => {
 });
 
 /* ── Boot ──────────────────────────────────────────────────────── */
-function wireDebugRefresh() {
-  const v = document.getElementById('versionLabel');
-  if (v) v.textContent = FOLIO_VERSION;
-  const r = document.getElementById('refreshBtn');
-  if (r) r.href = './?v=' + Date.now();
-}
 
 (async function init() {
-  wireDebugRefresh();
   await hydrate();
   requestPersistentStorage(false);
   renderLib();
