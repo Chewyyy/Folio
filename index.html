@@ -73,9 +73,13 @@ html,body{height:100%;height:100dvh;background:#C8C3BC;
 
 .bcard{background:var(--card);border-radius:var(--r);overflow:hidden;cursor:pointer;
   box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s;position:relative;
-  -webkit-touch-callout:none;user-select:none}
+  -webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+.bcard *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.bcard img,.bcover{-webkit-user-drag:none;user-drag:none}
 .bcard:hover{transform:translateY(-2px);box-shadow:var(--shadowLg)}
-.bcard:active{transform:scale(.97)}
+.bcard:active,.bcard.pressing{transform:scale(.97)}
+.bcard.longpressing{animation:bookPressPop .22s cubic-bezier(.22,1,.36,1)}
+@keyframes bookPressPop{0%{transform:scale(.97)}60%{transform:scale(1.015)}100%{transform:scale(1)}}
 .bcwrap{width:100%;aspect-ratio:2/3;overflow:hidden;position:relative}
 .bcover{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
 .bph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:38px}
@@ -222,6 +226,20 @@ html,body{height:100%;height:100dvh;background:#C8C3BC;
   padding:4px 2px;flex-shrink:0;opacity:.55}
 .nodata{text-align:center;color:var(--sub);font-size:14px;padding:32px;line-height:1.65}
 
+.year-books-card{background:var(--card);border-radius:var(--r);padding:18px 12px 20px;
+  box-shadow:var(--shadow);margin-bottom:20px;text-align:center;overflow:hidden}
+.year-books-card h3{font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:800;margin-bottom:14px;letter-spacing:-.2px}
+.yb-grid{display:grid;grid-template-columns:repeat(4,54px);gap:10px 8px;justify-content:center;margin:4px auto 14px}
+.yb-cover{width:54px;height:81px;border-radius:4px;position:relative;background:linear-gradient(135deg,#2D6A4F,#52B788);
+  box-shadow:0 2px 8px rgba(0,0,0,.22);overflow:visible}
+.yb-cover img{width:100%;height:100%;object-fit:cover;border-radius:4px;display:block}
+.yb-cover .yb-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px}
+.yb-check{position:absolute;right:-7px;bottom:-7px;width:25px;height:25px;border-radius:50%;background:#0A84FF;color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;box-shadow:0 2px 5px rgba(0,0,0,.22)}
+.yb-more{display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800;background:rgba(0,0,0,.38)}
+.yb-status{font-size:15px;font-weight:800;color:#0A84FF;margin-top:2px}
+.yb-sub{font-size:13px;color:var(--sub);margin-top:4px;line-height:1.35}
+
 .toast{position:absolute;bottom:80px;left:50%;z-index:400;
   transform:translateX(-50%) translateY(10px);
   background:rgba(26,26,26,.9);color:#fff;
@@ -330,14 +348,10 @@ body.reader-open{background:var(--read-bg)!important}
   z-index:45;height:52px;display:flex;flex-direction:column;gap:6px;align-items:center;
   justify-content:center;background:var(--read-bg);color:var(--read-sub);
   font-size:15px;font-weight:700;pointer-events:none}
-.scrubwrap{width:min(78vw,330px);height:24px;display:none;align-items:center;pointer-events:auto}
-#reader.chrome .scrubwrap{display:flex}
-#scrub{width:100%;-webkit-appearance:none;appearance:none;height:6px;border-radius:999px;
-  background:rgba(128,128,128,.45);outline:none;cursor:pointer}
-#scrub::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;
-  background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.35);border:none}
-#scrub::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;
-  box-shadow:0 1px 6px rgba(0,0,0,.35);border:none}
+.bookprogresswrap{width:min(78vw,330px);height:10px;display:none;align-items:center;pointer-events:none}
+#reader.chrome .bookprogresswrap{display:flex}
+.bookprogress{width:100%;height:5px;border-radius:999px;background:rgba(128,128,128,.33);overflow:hidden}
+.bookprogress-fill{height:100%;width:0%;border-radius:999px;background:#0A84FF;transition:width .22s cubic-bezier(.22,1,.36,1)}
 
 /* sheets */
 .sheet-backdrop{position:absolute;inset:0;z-index:200;background:rgba(0,0,0,.28);
@@ -412,10 +426,14 @@ body.reader-open{background:var(--read-bg)!important}
 /* action / form sheets (app-level) */
 .app-sheet-backdrop{position:absolute;inset:0;z-index:300;background:rgba(0,0,0,.32);
   display:none;align-items:flex-end;justify-content:center}
-.app-sheet-backdrop.on{display:flex}
+.app-sheet-backdrop.on{display:flex;animation:backdropFade .18s ease-out both}
 .app-sheet{width:100%;max-width:430px;max-height:88dvh;overflow-y:auto;border-radius:24px 24px 0 0;
   background:var(--bg);padding:16px 16px calc(20px + env(safe-area-inset-bottom,0px));
   box-shadow:0 -18px 45px rgba(0,0,0,.3)}
+.app-sheet-backdrop.on .app-sheet{animation:sheetRise .24s cubic-bezier(.22,1,.36,1) both}
+.sheet-backdrop.on .sheet{animation:sheetRise .24s cubic-bezier(.22,1,.36,1) both}
+@keyframes backdropFade{from{opacity:0}to{opacity:1}}
+@keyframes sheetRise{from{transform:translateY(34px)}to{transform:translateY(0)}}
 .grabber{width:38px;height:5px;border-radius:3px;background:rgba(0,0,0,.18);margin:0 auto 14px}
 .as-title{font-size:16px;font-weight:800;text-align:center;margin-bottom:4px}
 .as-sub{font-size:12px;color:var(--sub);text-align:center;margin-bottom:14px}
@@ -566,6 +584,7 @@ body.reader-open{background:var(--read-bg)!important}
           <div class="bchart" id="chart"></div>
         </div>
       </div>
+      <div class="year-books-card" id="booksYearCard"></div>
       <div class="ssec">
         <h3>Recent Sessions</h3>
         <div id="slist"><div class="nodata">No sessions yet.<br>Open a book to start reading!</div></div>
@@ -602,7 +621,7 @@ body.reader-open{background:var(--read-bg)!important}
         <button class="menu-pill" id="settingsBtn"><span>Themes &amp; Settings</span><span style="font-weight:800">Aᴀ</span></button>
       </div>
       <div class="reader-status-bottom">
-        <div class="scrubwrap"><input type="range" id="scrub" min="0" max="1000" value="0"></div>
+        <div class="bookprogresswrap" aria-hidden="true"><div class="bookprogress"><div class="bookprogress-fill" id="bookProgressFill"></div></div></div>
         <div id="pageStatus">Page 1</div>
       </div>
       <div class="rload" id="rload">
@@ -798,7 +817,7 @@ body.reader-open{background:var(--read-bg)!important}
 </div>
 
 <script>
-const FOLIO_VERSION = 'v14-reader-plus';
+const FOLIO_VERSION = 'v15-reader-polish';
 const CHARS_PER_PAGE = 1800;   // ≈ Apple Books / print pagination density
 
 function dbg(msg) {}
@@ -1109,6 +1128,8 @@ function renderLib() {
   }).join('');
 
   grid.querySelectorAll('.bcard').forEach(el => {
+    el.addEventListener('selectstart', e => e.preventDefault());
+    el.addEventListener('dragstart', e => e.preventDefault());
     el.addEventListener('click', e => {
       if (e.target.closest('.morebtn')) return;
       if (A.longPressed) { A.longPressed = false; return; }
@@ -1120,12 +1141,15 @@ function renderLib() {
       A.longPressed = false;
       const t = e.touches[0];
       const sx = t.clientX, sy = t.clientY;
+      let pressVisualTmr = setTimeout(() => el.classList.add('pressing'), 90);
       const move = ev => {
         const tt = ev.touches[0];
         if (Math.abs(tt.clientX-sx) > 10 || Math.abs(tt.clientY-sy) > 10) cancel();
       };
       const cancel = () => {
         clearTimeout(A.longPressTmr);
+        clearTimeout(pressVisualTmr);
+        el.classList.remove('pressing');
         el.removeEventListener('touchmove', move);
         el.removeEventListener('touchend', cancel);
         el.removeEventListener('touchcancel', cancel);
@@ -1136,6 +1160,9 @@ function renderLib() {
       A.longPressTmr = setTimeout(() => {
         A.longPressed = true;
         cancel();
+        el.classList.add('longpressing');
+        setTimeout(() => el.classList.remove('longpressing'), 240);
+        window.getSelection?.().removeAllRanges?.();
         if (navigator.vibrate) navigator.vibrate(12);
         openBookSheet(el.dataset.id);
       }, 480);
@@ -1490,7 +1517,7 @@ function renderStats() {
   document.getElementById('sdone').textContent = done;
   document.getElementById('savg').textContent  = fmt(avg);
   document.getElementById('sweek').textContent = fmt(week);
-  renderChart(); renderSessions();
+  renderChart(); renderBooksReadThisYear(); renderSessions();
 }
 
 function renderChart() {
@@ -1522,6 +1549,32 @@ function renderChart() {
   gl.style.bottom = bottom + 'px';
   gl.innerHTML = `<span>${goal}m goal</span>`;
   wrap.appendChild(gl);
+}
+
+const YEARLY_BOOK_GOAL = 10;
+function renderBooksReadThisYear() {
+  const wrap = document.getElementById('booksYearCard');
+  if (!wrap) return;
+  const year = new Date().getFullYear();
+  const done = A.books
+    .filter(b => b.finished && b.finishedAt && new Date(b.finishedAt).getFullYear() === year)
+    .sort((a,b)=>new Date(a.finishedAt)-new Date(b.finishedAt));
+  if (!done.length) {
+    wrap.innerHTML = `<h3>Books Read This Year</h3>
+      <div class="nodata" style="padding:20px 14px">No books finished in ${year} yet.<br>Press and hold a book to mark it finished.</div>`;
+    return;
+  }
+  const shown = done.slice(0, 12);
+  const extra = done.length - shown.length;
+  const covers = shown.map(b => {
+    const cov = b.cover ? `<img src="${b.cover}" alt="">` : `<div class="yb-ph">📖</div>`;
+    return `<div class="yb-cover">${cov}<span class="yb-check">✓</span></div>`;
+  }).join('') + (extra > 0 ? `<div class="yb-cover yb-more">+${extra}</div>` : '');
+  const achieved = done.length >= YEARLY_BOOK_GOAL;
+  wrap.innerHTML = `<h3>Books Read This Year</h3>
+    <div class="yb-grid">${covers}</div>
+    <div class="yb-status">${achieved ? 'Yearly Goal Achieved' : `${done.length} of ${YEARLY_BOOK_GOAL} Books`}</div>
+    <div class="yb-sub">${done.length} book${done.length===1?'':'s'} finished${achieved ? '. Keep reading!' : ` · ${YEARLY_BOOK_GOAL-done.length} to go.`}</div>`;
 }
 
 function renderSessions() {
@@ -1703,19 +1756,26 @@ function updatePageStatus() {
   const pct = Math.round((A.currentPct||0)*100);
   const cur = Math.max(1, Math.round(A.currentPage||1));
   const total = Math.round(A.totalPages||0);
+  const reader = document.getElementById('reader');
+  const detailed = !!reader?.classList.contains('chrome');
   const bottom = document.getElementById('pageStatus');
   const top = document.getElementById('sectionLeft');
+  const title = document.getElementById('rtitle');
   const mp = document.getElementById('menuPct');
-  if (bottom) bottom.textContent = total
-    ? `Page ${nfmt(cur)} of ${nfmt(Math.max(total,cur))} · ${pct}%`
-    : `${pct}%`;
-  if (top) top.textContent = A.chapterLeft||'';
+  const bk = A.books.find(b => b.id === A.bookId);
+  if (bottom) {
+    if (detailed && total) bottom.textContent = `Page ${nfmt(cur)} of ${nfmt(Math.max(total,cur))} · ${pct}%`;
+    else if (detailed) bottom.textContent = `Page ${nfmt(cur)} · ${pct}%`;
+    else bottom.textContent = `Page ${nfmt(cur)}`;
+  }
+  if (title) title.textContent = detailed ? (A.chapterLeft || 'Section progress unavailable') : (bk?.title || '');
+  if (top) top.textContent = '';
   if (mp) mp.textContent = `${pct}%`;
+  updateProgressBar();
 }
-function updateScrub() {
-  if (A.scrubbing) return;
-  const el = document.getElementById('scrub');
-  if (el) el.value = Math.round((A.currentPct||0)*1000);
+function updateProgressBar() {
+  const el = document.getElementById('bookProgressFill');
+  if (el) el.style.width = `${Math.max(0, Math.min(100, Math.round((A.currentPct||0)*100)))}%`;
 }
 function refreshLocationStatus() {
   try {
@@ -1749,21 +1809,24 @@ function handleRelocate(start) {
     A.currentPct = start.percentage || A.currentPct || 0;
   }
   const disp = start.displayed;
-  const left = Math.max(0,(disp?.total||0)-(disp?.page||0));
-  A.chapterLeft = left ? `${left} page${left===1?'':'s'} left in chapter` : '';
-  updatePageStatus(); updateScrub(); updateBmBtn();
+  const totalInSection = disp?.total || 0;
+  const left = Math.max(0, totalInSection - (disp?.page||0));
+  A.chapterLeft = totalInSection
+    ? (left ? `${left} page${left===1?'':'s'} left in chapter` : 'Last page of chapter')
+    : '';
+  updatePageStatus(); updateProgressBar(); updateBmBtn();
 }
 
 /* ── Chrome / menus / sheets ───────────────────────────────────── */
 function showChrome(auto=true) {
   const r = document.getElementById('reader');
   if (!r?.classList.contains('active')) return;
-  refreshLocationStatus();
   r.classList.add('chrome');
+  refreshLocationStatus();
   clearTimeout(A.chromeHideTmr);
   if (auto) A.chromeHideTmr = setTimeout(hideChrome, 5000);
 }
-function hideChrome(){ clearTimeout(A.chromeHideTmr); closeReaderMenu(); document.getElementById('reader')?.classList.remove('chrome'); }
+function hideChrome(){ clearTimeout(A.chromeHideTmr); closeReaderMenu(); document.getElementById('reader')?.classList.remove('chrome'); updatePageStatus(); }
 function toggleChrome(){ const r=document.getElementById('reader'); if(!r) return; r.classList.contains('chrome')?hideChrome():showChrome(true); }
 function closeReaderMenu(){ document.getElementById('readerMenu')?.classList.remove('open'); document.getElementById('menuFab')?.classList.remove('open'); }
 function toggleReaderMenu(){ const menu=document.getElementById('readerMenu'), fab=document.getElementById('menuFab'); if(!menu||!fab) return; const open=!menu.classList.contains('open'); menu.classList.toggle('open',open); fab.classList.toggle('open',open); showChrome(false); }
@@ -1986,7 +2049,7 @@ function wireReaderControlsOnce() {
   /* Theme swatches (built from THEMES) */
   $('themeRow').innerHTML = THEMES.map(t => `
     <button class="theme-swatch" data-theme="${t.id}"
-      style="background:${t.bg};color:${t.fg}">Aa<small>${t.name}</small></button>`).join('');
+      style="background:${t.bg};color:${t.fg}">Aa<small>${t.label}</small></button>`).join('');
   $('themeRow').querySelectorAll('.theme-swatch').forEach(b =>
     b.addEventListener('click', async () => {
       A.readerSettings.theme = b.dataset.theme;
@@ -1995,7 +2058,7 @@ function wireReaderControlsOnce() {
 
   /* Font chips (built from FONTS) */
   $('fontChips').innerHTML = FONTS.map(f => `
-    <button class="fchip" data-font="${f.id}" style="font-family:${f.css||'inherit'}">${f.name}</button>`).join('');
+    <button class="fchip" data-font="${f.id}" style="font-family:${f.css||'inherit'}">${f.label}</button>`).join('');
   $('fontChips').querySelectorAll('.fchip').forEach(b =>
     b.addEventListener('click', async () => {
       A.readerSettings.font = b.dataset.font;
@@ -2054,26 +2117,8 @@ function wireReaderControlsOnce() {
   });
   $('brightSlider').addEventListener('change', () => persist());
 
-  /* Scrubber */
-  $('scrub').addEventListener('input', () => {
-    A.scrubbing = true;
-    const v = Number($('scrub').value) / 1000;
-    const ps = $('pageStatus');
-    if (A.locationsReady && A.totalPages) {
-      ps.textContent = `Page ${nfmt(Math.max(1, Math.round(v*A.totalPages)))} of ${nfmt(A.totalPages)} · ${Math.round(v*100)}%`;
-    } else ps.textContent = `${Math.round(v*100)}%`;
-  });
-  $('scrub').addEventListener('change', async () => {
-    const v = Number($('scrub').value) / 1000;
-    A.scrubbing = false;
-    if (A.rend && A.epubBook?.locations && A.locationsReady) {
-      try {
-        const cfi = A.epubBook.locations.cfiFromPercentage(v);
-        if (cfi) { await A.rend.display(cfi); setTimeout(refreshLocationStatus, 200); }
-      } catch(_) {}
-    }
-    showChrome(true);
-  });
+  /* Book progress bar is display-only. Page navigation stays tap/swipe based. */
+  updateProgressBar();
 }
 
 /* ── Reader lifecycle ──────────────────────────────────────────── */
