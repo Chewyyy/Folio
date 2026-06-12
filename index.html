@@ -196,6 +196,31 @@ input[type=file]{display:none}
 .reader-status-top,.reader-status-bottom{position:absolute;left:0;right:0;z-index:45;text-align:center;color:var(--read-sub);pointer-events:none}.reader-status-top{top:calc(20px + env(safe-area-inset-top,0px));font-size:15px;font-weight:700;opacity:0}#reader.chrome .reader-status-top{opacity:.9}.reader-status-bottom{bottom:calc(4px + env(safe-area-inset-bottom,0px));height:52px;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;background:var(--read-bg);font-size:16px;font-weight:800}.reader-progress{width:min(72vw,310px);height:6px;border-radius:999px;background:#8E8E93;overflow:hidden;opacity:0;transform:translateY(3px);transition:opacity .18s ease,transform .18s ease}.reader-progress-fill{height:100%;width:0%;border-radius:999px;background:#007AFF;transition:width .25s ease}#reader.chrome .reader-progress{opacity:1;transform:translateY(0)}
 .sheet-backdrop{position:absolute;inset:0;z-index:200;background:rgba(0,0,0,.28);display:none;align-items:flex-end;justify-content:center}.sheet-backdrop.on{display:flex}.sheet{width:100%;max-width:430px;max-height:86vh;overflow:hidden;border-radius:30px 30px 0 0;background:var(--read-sheet);color:var(--read-fg);padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -18px 45px rgba(0,0,0,.28);backdrop-filter:blur(22px)}.sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.sheet-title{text-align:center;flex:1;font-size:20px;font-weight:800}.sheet-sub{text-align:center;opacity:.65;margin-top:4px}.sheet-close{border:0;background:#fff;color:#111;border-radius:50%;width:46px;height:46px;font-size:28px;line-height:1;box-shadow:0 2px 12px rgba(0,0,0,.18)}.toc-list{max-height:62vh;overflow:auto}.toc-item{display:flex;align-items:center;justify-content:space-between;gap:14px;border:0;border-bottom:1px solid rgba(118,118,128,.22);padding:15px 8px;width:100%;background:transparent;color:inherit;text-align:left;font-size:16px}.toc-item span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.settings-group{background:rgba(118,118,128,.14);border-radius:22px;padding:14px;margin-bottom:14px}.setting-label{font-size:13px;font-weight:700;opacity:.65;margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px}.theme-row,.font-row{display:flex;gap:10px;align-items:center}.choice{flex:1;border:0;border-radius:18px;padding:14px 10px;font-size:16px;font-weight:700;background:rgba(255,255,255,.75);color:#111}.choice.on{outline:3px solid #007AFF}#reader.dark .choice{background:rgba(118,118,128,.35);color:#fff}.font-btn{border:0;border-radius:18px;background:rgba(118,118,128,.20);color:inherit;padding:12px 18px;font-weight:800}.font-sample{flex:1;text-align:center;font-size:17px;font-weight:700}.toggle-row{display:flex;align-items:center;justify-content:space-between;font-size:17px;font-weight:650}.switch{width:52px;height:32px;border:0;border-radius:18px;background:rgba(118,118,128,.35);position:relative}.switch:before{content:"";position:absolute;width:28px;height:28px;border-radius:50%;background:#fff;left:2px;top:2px;transition:left .18s}.switch.on{background:#007AFF}.switch.on:before{left:22px}
 
+
+/* v12 page counter fix */
+#viewer,#viewer iframe{
+  transform:none!important;
+  opacity:1!important;
+}
+#reader.turning-next #viewer,
+#reader.turning-prev #viewer,
+#reader.turning-next::after,
+#reader.turning-prev::after{
+  animation:none!important;
+  content:none!important;
+  transform:none!important;
+}
+.header-debug a{
+  display:inline-block;
+  text-decoration:none;
+  background:var(--accent);
+  color:#fff;
+  border-radius:999px;
+  padding:6px 8px;
+  font-size:10px;
+  font-weight:900;
+}
+
 </style>
 </head>
 <body>
@@ -207,8 +232,8 @@ input[type=file]{display:none}
       <div class="hdr-left">
         <h1>Folio</h1>
         <div class="header-debug" id="debugRefresh">
-          <span class="ver" id="versionLabel">v11-stable-clean</span>
-          <a id="refreshBtn" href="./?v=v11-stable-clean-1781295720" role="button">Update</a>
+          <span class="ver" id="versionLabel">v12-page-counter-fix</span>
+          <a id="refreshBtn" href="./?v=v12-page-counter-fix-1781296082" role="button">Update</a>
         </div>
       </div>
       <button class="ibtn" id="addbtn" title="Add Book">
@@ -341,7 +366,7 @@ input[type=file]{display:none}
 </div>
 
 <script>
-const FOLIO_VERSION = 'v11-stable-clean';
+const FOLIO_VERSION = 'v12-page-counter-fix';
 
 function dbg(msg) {}
 
@@ -429,6 +454,9 @@ const A = {
   currentPage: 1,
   totalPages: 0,
   currentPct: 0,
+  currentCfi: null,
+  pendingTurn: null,
+  suppressLocationPageUpdate: false,
   chapterLeft: '',
   turningPage: false,
   navDirection: null,
@@ -713,34 +741,83 @@ function applyReaderSettings(){
   }catch(e){console.error(e)}
 }
 function updatePageStatus(showDetails=document.getElementById('reader')?.classList.contains('chrome')){
-  const pct=Math.round((A.currentPct||0)*100), cur=Math.max(1,Math.round(A.currentPage||1)), total=Math.max(cur,Math.round(A.totalPages||0));
+  const pct=Math.round((A.currentPct||0)*100), cur=Math.max(1,Math.round(A.currentPage||1)), total=Math.round(A.totalPages||0);
   const bottom=document.getElementById('pageStatus'), top=document.getElementById('sectionLeft'), fill=document.getElementById('readerProgressFill'), mp=document.getElementById('menuPct');
-  if(bottom) bottom.textContent=(showDetails&&total)?`Page ${cur} of ${total} · ${pct}%`:`Page ${cur}`;
+  if(bottom) bottom.textContent=(showDetails&&total)?`Page ${cur} of ${Math.max(total,cur)} · ${pct}%`:`Page ${cur}`;
   if(fill) fill.style.width=`${Math.max(0,Math.min(100,pct))}%`;
   if(top) top.textContent=showDetails?(A.chapterLeft||''):'';
   if(mp) mp.textContent=`${pct}%`;
 }
+function getLocationStart(loc){
+  return Array.isArray(loc) ? loc[0]?.start : loc?.start;
+}
+function updateLocationMeta(loc){
+  const start = getLocationStart(loc);
+  if(!start) return false;
+
+  A.currentCfi = start.cfi || A.currentCfi;
+  A.currentPct = start.percentage || A.currentPct || 0;
+
+  let total = A.totalPages || 0;
+  try {
+    total = A.epubBook?.locations?.total || A.epubBook?.locations?.length?.() || total;
+  } catch(_) {}
+  if (total) A.totalPages = total;
+
+  const left = Math.max(0,(start.displayed?.total||0)-(start.displayed?.page||0));
+  A.chapterLeft = left ? `${left} page${left===1?'':'s'} left in chapter` : '';
+  return true;
+}
 function estimatePageFromLocation(loc){
-  const start=Array.isArray(loc)?loc[0]?.start:loc?.start; if(!start) return A.currentPage||1;
-  const pct=start.percentage||A.currentPct||0; A.currentPct=pct;
-  let total=A.totalPages||0, page=0;
-  try{ total=A.epubBook?.locations?.total || A.epubBook?.locations?.length?.() || total; }catch(_){}
-  if(total){ try{ page=(A.epubBook.locations.locationFromCfi(start.cfi)||0)+1; }catch(_){} }
-  if(!page) page=Math.max(1,Math.round(pct*(total||1000)));
-  A.totalPages=total||A.totalPages;
-  const left=Math.max(0,(start.displayed?.total||0)-(start.displayed?.page||0));
-  A.chapterLeft=left?`${left} page${left===1?'':'s'} left in chapter`:'';
-  return page;
+  updateLocationMeta(loc);
+  const pct = A.currentPct || 0;
+  const total = A.totalPages || 0;
+
+  let estimated = 1;
+  if (total) {
+    estimated = Math.max(1, Math.min(total, Math.round(pct * total) || 1));
+  } else {
+    estimated = Math.max(1, Math.round(pct * 1000) || 1);
+  }
+  return estimated;
 }
-function setLocationStatus(loc){
-  const estimated=estimatePageFromLocation(loc);
-  if(A.navDirection==='next') A.currentPage=Math.min(A.totalPages||999999,(A.currentPage||estimated||1)+1);
-  else if(A.navDirection==='prev') A.currentPage=Math.max(1,(A.currentPage||estimated||1)-1);
-  else A.currentPage=estimated;
-  A.navDirection=null; updatePageStatus();
+function setEstimatedPageFromLocation(loc){
+  const estimated = estimatePageFromLocation(loc);
+  A.currentPage = estimated;
+  updatePageStatus();
 }
-function forceRefreshLocationStatus(){try{const loc=A.rend?.currentLocation?.(); if(loc) setLocationStatus(loc);}catch(e){console.error(e)}}
-function showChrome(auto=true){const r=document.getElementById('reader'); if(!r?.classList.contains('active')) return; forceRefreshLocationStatus(); r.classList.add('chrome'); updatePageStatus(true); clearTimeout(A.chromeHideTmr); if(auto) A.chromeHideTmr=setTimeout(hideChrome,4500)}
+function applyCompletedPageTurn(direction, locBefore, locAfter){
+  updateLocationMeta(locAfter);
+
+  const beforeCfi = getLocationStart(locBefore)?.cfi || null;
+  const afterCfi = getLocationStart(locAfter)?.cfi || null;
+  const moved = !beforeCfi || !afterCfi || beforeCfi !== afterCfi;
+
+  if (moved) {
+    if (direction === 'next') A.currentPage = Math.min(A.totalPages || 999999, (A.currentPage || 1) + 1);
+    else A.currentPage = Math.max(1, (A.currentPage || 1) - 1);
+  }
+
+  updatePageStatus(false);
+}
+function forceRefreshLocationStatus(){
+  try{
+    const loc=A.rend?.currentLocation?.();
+    if(loc){
+      updateLocationMeta(loc);
+      updatePageStatus();
+    }
+  }catch(e){console.error(e)}
+}
+function showChrome(auto=true){
+  const r=document.getElementById('reader');
+  if(!r?.classList.contains('active')) return;
+  forceRefreshLocationStatus();
+  r.classList.add('chrome');
+  updatePageStatus(true);
+  clearTimeout(A.chromeHideTmr);
+  if(auto) A.chromeHideTmr=setTimeout(hideChrome,4500);
+}
 function hideChrome(){clearTimeout(A.chromeHideTmr); closeReaderMenu(); document.getElementById('reader')?.classList.remove('chrome'); updatePageStatus(false)}
 function toggleChrome(){const r=document.getElementById('reader'); if(!r) return; r.classList.contains('chrome')?hideChrome():showChrome(true)}
 function closeReaderMenu(){document.getElementById('readerMenu')?.classList.remove('open'); document.getElementById('menuFab')?.classList.remove('open')}
@@ -748,12 +825,31 @@ function toggleReaderMenu(){const menu=document.getElementById('readerMenu'), fa
 function openSheet(id){closeReaderMenu(); showChrome(false); document.getElementById('reader')?.classList.add('sheet-open'); document.getElementById(id)?.classList.add('on')}
 function closeSheet(id){document.getElementById(id)?.classList.remove('on'); if(!document.querySelector('.sheet-backdrop.on')) document.getElementById('reader')?.classList.remove('sheet-open'); showChrome(true)}
 function flattenToc(items,depth=0,out=[]){(items||[]).forEach(item=>{out.push({label:item.label||item.title||'Chapter',href:item.href,depth}); if(item.subitems?.length) flattenToc(item.subitems,depth+1,out)}); return out}
-function renderToc(){const list=document.getElementById('tocList'); if(!list) return; const toc=A.toc||[]; if(!toc.length){list.innerHTML='<div class="nodata">No table of contents found.</div>'; return} list.innerHTML=toc.map((item,i)=>`<button class="toc-item" data-i="${i}" style="padding-left:${8+item.depth*18}px"><span>${esc(item.label)}</span><span>›</span></button>`).join(''); list.querySelectorAll('.toc-item').forEach(btn=>btn.addEventListener('click',async()=>{const item=A.toc[Number(btn.dataset.i)]; if(item?.href&&A.rend){A.navDirection=null; closeSheet('tocSheet'); hideChrome(); await A.rend.display(item.href); setTimeout(forceRefreshLocationStatus,150); setTimeout(forceRefreshLocationStatus,500)}}))}
+function renderToc(){const list=document.getElementById('tocList'); if(!list) return; const toc=A.toc||[]; if(!toc.length){list.innerHTML='<div class="nodata">No table of contents found.</div>'; return} list.innerHTML=toc.map((item,i)=>`<button class="toc-item" data-i="${i}" style="padding-left:${8+item.depth*18}px"><span>${esc(item.label)}</span><span>›</span></button>`).join(''); list.querySelectorAll('.toc-item').forEach(btn=>btn.addEventListener('click',async()=>{const item=A.toc[Number(btn.dataset.i)]; if(item?.href&&A.rend){ closeSheet('tocSheet'); hideChrome(); await A.rend.display(item.href); setTimeout(()=>{ const loc=A.rend?.currentLocation?.(); if(loc) setEstimatedPageFromLocation(loc); },180); setTimeout(()=>{ const loc=A.rend?.currentLocation?.(); if(loc) setEstimatedPageFromLocation(loc); },650)}}))}
 async function stablePageTurn(direction){
-  if(!A.rend||A.turningPage) return; A.turningPage=true; A.navDirection=direction; closeReaderMenu(); hideChrome();
-  try{ if(direction==='prev') await A.rend.prev(); else await A.rend.next(); setTimeout(forceRefreshLocationStatus,120); setTimeout(forceRefreshLocationStatus,450); }
-  catch(e){console.error(e); toast('Page turn failed')}
-  finally{setTimeout(()=>{A.turningPage=false},220)}
+  if(!A.rend||A.turningPage) return;
+  A.turningPage=true;
+  A.pendingTurn=direction;
+  closeReaderMenu();
+  hideChrome();
+
+  let before=null;
+  try{ before=A.rend.currentLocation?.(); }catch(_){}
+
+  try{
+    if(direction==='prev') await A.rend.prev();
+    else await A.rend.next();
+
+    setTimeout(()=>{
+      try{
+        const after=A.rend.currentLocation?.();
+        applyCompletedPageTurn(direction,before,after);
+      }catch(e){console.error(e)}
+      A.pendingTurn=null;
+    },140);
+  }
+  catch(e){console.error(e); toast('Page turn failed'); A.pendingTurn=null}
+  finally{setTimeout(()=>{A.turningPage=false},260)}
 }
 function wireReaderControlsOnce(){
   if(window.__folioReaderControlsWired) return; window.__folioReaderControlsWired=true;
@@ -782,7 +878,7 @@ async function openReader(bookId) {
   A.bookId = bookId;
 
   document.getElementById('rtitle').textContent  = bk.title;
-  A.currentPage=1; A.totalPages=0; A.currentPct=A.progress[bookId]?.pct||0; A.navDirection=null;
+  A.currentPage=1; A.totalPages=0; A.currentPct=A.progress[bookId]?.pct||0; A.currentCfi=null; A.pendingTurn=null;
   updatePageStatus(false);
   document.getElementById('timer').textContent   = '0:00';
   document.getElementById('rload').style.display = 'flex';
@@ -829,21 +925,23 @@ async function mountEpub(buf, bkMeta) {
     renderToc();
     applyReaderSettings();
 
-    epubBk.locations.generate(350).then(()=>{ A.totalPages = epubBk.locations.total || epubBk.locations.length?.() || A.totalPages; forceRefreshLocationStatus(); }).catch(()=>{});
+    epubBk.locations.generate(350).then(()=>{ A.totalPages = epubBk.locations.total || epubBk.locations.length?.() || A.totalPages; updatePageStatus(); }).catch(()=>{});
 
     const saved = A.progress[bkMeta.id]?.cfi;
     await rend.display(saved||undefined);
     applyReaderSettings();
-    forceRefreshLocationStatus();
+    setTimeout(()=>{ const loc=A.rend?.currentLocation?.(); if(loc) setEstimatedPageFromLocation(loc); },100);
     dbg('Rendered first location');
 
     document.getElementById('rload').style.display = 'none';
 
-    const p = A.progress[bkMeta.id];
-    if (p?.pct) { A.currentPct = p.pct || 0; updatePageStatus(false); }
-
     rend.on('relocated', loc => {
-      setLocationStatus(loc);
+      if (A.pendingTurn) {
+        updateLocationMeta(loc);
+        updatePageStatus(false);
+      } else {
+        setEstimatedPageFromLocation(loc);
+      }
       if (!A.progress[bkMeta.id]) A.progress[bkMeta.id]={};
       A.progress[bkMeta.id].cfi      = loc.start.cfi;
       A.progress[bkMeta.id].pct      = A.currentPct;
