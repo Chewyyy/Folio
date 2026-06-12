@@ -237,6 +237,16 @@ html,body{height:100%;height:100dvh;background:#C8C3BC;
 .bar.zero{opacity:.18}
 .bar.met{background:var(--gold);opacity:.9}
 .blbl{font-size:9px;color:var(--sub);font-weight:600}
+.pacechart{height:172px;position:relative;overflow:hidden}
+.pace-svg{width:100%;height:154px;display:block;overflow:visible}
+.pace-grid{stroke:var(--border);stroke-width:1;opacity:.85}
+.pace-axis{fill:var(--sub);font-size:10px;font-weight:700}
+.pace-line{fill:none;stroke:#22B8CF;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.pace-dot{fill:#22B8CF;stroke:var(--card);stroke-width:2}
+.pace-fill{fill:#22B8CF;opacity:.12}
+.pace-legend{display:flex;align-items:center;gap:6px;margin-top:2px;color:var(--sub);font-size:11px;font-weight:700}
+.pace-legend .key{width:9px;height:9px;border-radius:50%;background:#22B8CF;display:inline-block}
+.pace-empty{height:138px;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--sub);font-size:13px;line-height:1.45}
 
 .ssec h3{font-size:14px;font-weight:700;margin-bottom:12px}
 .srow{background:var(--card);border-radius:var(--rsm);padding:12px 14px;
@@ -701,11 +711,26 @@ body.reader-open{background:var(--read-bg)!important}
           <div class="stval" id="sweek">0m</div>
           <div class="stsub">last 7 days</div>
         </div>
+        <div class="stcard">
+          <div class="stlbl">Total Pages</div>
+          <div class="stval" id="spages">0</div>
+          <div class="stsub">all time</div>
+        </div>
+        <div class="stcard">
+          <div class="stlbl">Avg Pages</div>
+          <div class="stval" id="spavg">0</div>
+          <div class="stsub">per session</div>
+        </div>
+        <div class="stcard">
+          <div class="stlbl">Pages This Week</div>
+          <div class="stval" id="spweek">0</div>
+          <div class="stsub">last 7 days</div>
+        </div>
       </div>
       <div class="chcard">
-        <h3>Last 7 Days</h3>
+        <h3>Reading Pace · Last 7 Days</h3>
         <div class="bchartwrap" id="chartwrap">
-          <div class="bchart" id="chart"></div>
+          <div class="pacechart" id="chart"></div>
         </div>
       </div>
       <div class="year-books-card" id="booksYearCard"></div>
@@ -969,7 +994,7 @@ body.reader-open{background:var(--read-bg)!important}
 </div>
 
 <script>
-const FOLIO_VERSION = 'v24-clean-header';
+const FOLIO_VERSION = 'v25-stats-pace';
 const CHARS_PER_PAGE = 1800;   // ≈ Apple Books / print pagination density
 
 function dbg(msg) {}
@@ -2160,7 +2185,7 @@ document.getElementById('dsAdd').addEventListener('click', async () => {
     bookId, bookTitle: bk?.title || 'Manual entry',
     start: d.toISOString(),
     end: new Date(d.getTime()+secs*1000).toISOString(),
-    secs, p0: 0, p1: 0,
+    secs, p0: 0, p1: 0, pagesRead: 0,
   });
   await persist();
   document.getElementById('dsMins').value = '';
@@ -2209,49 +2234,107 @@ function renderJournal() {
 }
 
 /* ── Stats ─────────────────────────────────────────────────────── */
+function bookPageCount(bookId) {
+  const b = A.books.find(x => x.id === bookId);
+  return Math.round(b?.pageCount || A.progress[bookId]?.pageCount || 0);
+}
+function sessionPages(s) {
+  if (!s) return 0;
+  if (Number.isFinite(Number(s.pagesRead))) return Math.max(0, Math.round(Number(s.pagesRead)));
+  if (Number.isFinite(Number(s.pages))) return Math.max(0, Math.round(Number(s.pages)));
+  const total = bookPageCount(s.bookId);
+  if (!total) return 0;
+  const p0 = Number(s.p0 || 0), p1 = Number(s.p1 || 0);
+  return Math.max(0, Math.round(Math.max(0, p1 - p0) * total));
+}
+function sessionMinutes(s) {
+  return Math.max(0, Number(s?.secs || 0) / 60);
+}
+function sessionsSince(ms) {
+  return A.sessions.filter(s => new Date(s.start).getTime() >= ms);
+}
+
 function renderStats() {
   const total = A.sessions.reduce((a,s)=>a+(s.secs||0),0);
   const avg   = A.sessions.length ? total/A.sessions.length : 0;
   const done  = A.books.filter(b=>b.finished).length;
   const weekAgo = Date.now()-7*86400000;
-  const week  = A.sessions.filter(s=>new Date(s.start)>=weekAgo)
-    .reduce((a,s)=>a+(s.secs||0),0);
+  const weekSessions = sessionsSince(weekAgo);
+  const week  = weekSessions.reduce((a,s)=>a+(s.secs||0),0);
+  const totalPages = A.sessions.reduce((a,s)=>a+sessionPages(s),0);
+  const avgPages   = A.sessions.length ? totalPages/A.sessions.length : 0;
+  const weekPages  = weekSessions.reduce((a,s)=>a+sessionPages(s),0);
   document.getElementById('stot').textContent  = fmt(total);
   document.getElementById('sdone').textContent = done;
   document.getElementById('savg').textContent  = fmt(avg);
   document.getElementById('sweek').textContent = fmt(week);
+  const spages = document.getElementById('spages'); if (spages) spages.textContent = nfmt(totalPages);
+  const spavg  = document.getElementById('spavg');  if (spavg)  spavg.textContent  = nfmt(Math.round(avgPages));
+  const spweek = document.getElementById('spweek'); if (spweek) spweek.textContent = nfmt(weekPages);
   renderChart(); renderBooksReadThisYear(); renderSessions(); updateStorageStatus();
 }
 
 function renderChart() {
   const chart = document.getElementById('chart');
   const wrap  = document.getElementById('chartwrap');
-  const goal  = goalMinutes();
-  const map = secsByDay();
+  if (!chart) return;
+  if (wrap) wrap.querySelector('.goal-line')?.remove();
+
   const days = [];
   for (let i=6; i>=0; i--) {
     const d = new Date(Date.now()-i*86400000);
-    const mins = Math.round((map[dayKey(d)]||0)/60);
-    days.push({ mins, today:i===0, met:mins>=goal,
-      lbl: i===0?'Today':d.toLocaleDateString('en-US',{weekday:'short'}) });
+    const key = dayKey(d);
+    const sessions = A.sessions.filter(s => dayKey(s.start) === key);
+    const mins = sessions.reduce((a,s)=>a+sessionMinutes(s),0);
+    const pages = sessions.reduce((a,s)=>a+sessionPages(s),0);
+    const pace = mins > 0 && pages > 0 ? pages / mins : null;
+    days.push({
+      key, mins, pages, pace,
+      lbl: i===0 ? 'Today' : d.toLocaleDateString('en-US',{weekday:'short'})
+    });
   }
-  const max = Math.max(...days.map(d=>d.mins), goal, 1);
-  chart.innerHTML = days.map(d=>{
-    const h   = d.mins===0 ? 3 : Math.max(4,Math.round((d.mins/max)*72));
-    const cls = d.mins===0?'bar zero':`bar${d.met?' met':''}${d.today?' today':''}`;
-    return `<div class="bcol" title="${d.mins} min">
-      <div class="${cls}" style="height:${h}px"></div>
-      <div class="blbl">${d.lbl}</div>
-    </div>`;
-  }).join('');
-  // Dashed goal line over the bars
-  wrap.querySelector('.goal-line')?.remove();
-  const gl = document.createElement('div');
-  gl.className = 'goal-line';
-  const bottom = 14 + Math.round((goal/max)*72);   // 14px label row below bars
-  gl.style.bottom = bottom + 'px';
-  gl.innerHTML = `<span>${goal}m goal</span>`;
-  wrap.appendChild(gl);
+
+  const valid = days.filter(d => Number.isFinite(d.pace));
+  if (!valid.length) {
+    chart.innerHTML = `<div class="pace-empty">No page-based pace yet.<br>Read after Folio finishes pagination to build this chart.</div>`;
+    return;
+  }
+
+  const w = 320, h = 160, l = 34, r = 12, t = 14, b = 30;
+  const plotW = w - l - r, plotH = h - t - b;
+  const maxPace = Math.max(0.25, ...valid.map(d => d.pace)) * 1.15;
+  const x = i => l + (plotW * i / 6);
+  const y = v => t + plotH - ((v || 0) / maxPace) * plotH;
+
+  let path = '';
+  days.forEach((d,i) => {
+    if (!Number.isFinite(d.pace)) return;
+    path += `${path ? ' L' : 'M'} ${x(i).toFixed(1)} ${y(d.pace).toFixed(1)}`;
+  });
+
+  const firstIdx = days.findIndex(d => Number.isFinite(d.pace));
+  const lastIdx = days.length - 1 - [...days].reverse().findIndex(d => Number.isFinite(d.pace));
+  const area = firstIdx >= 0 && lastIdx >= firstIdx
+    ? `${path} L ${x(lastIdx).toFixed(1)} ${y(0).toFixed(1)} L ${x(firstIdx).toFixed(1)} ${y(0).toFixed(1)} Z`
+    : '';
+
+  const gridVals = [maxPace, maxPace/2, 0];
+  const grid = gridVals.map(v => `
+    <line class="pace-grid" x1="${l}" y1="${y(v).toFixed(1)}" x2="${w-r}" y2="${y(v).toFixed(1)}"></line>
+    <text class="pace-axis" x="0" y="${(y(v)+3).toFixed(1)}">${v.toFixed(2)}</text>`).join('');
+  const xlabels = days.map((d,i) => `<text class="pace-axis" x="${x(i).toFixed(1)}" y="${h-8}" text-anchor="middle">${esc(d.lbl.slice(0,3))}</text>`).join('');
+  const dots = days.map((d,i) => Number.isFinite(d.pace)
+    ? `<circle class="pace-dot" cx="${x(i).toFixed(1)}" cy="${y(d.pace).toFixed(1)}" r="4"><title>${d.lbl}: ${d.pace.toFixed(2)} pages/min · ${Math.round(d.pages)} pages</title></circle>`
+    : '').join('');
+
+  chart.innerHTML = `<svg class="pace-svg" viewBox="0 0 ${w} ${h}" role="img" aria-label="Reading pace over the last seven days">
+      ${grid}
+      ${area ? `<path class="pace-fill" d="${area}"></path>` : ''}
+      <path class="pace-line" d="${path}"></path>
+      ${dots}
+      ${xlabels}
+    </svg>
+    <div class="pace-legend"><span class="key"></span>Pages per minute</div>`;
 }
 
 const YEARLY_BOOK_GOAL = 10;
@@ -2290,7 +2373,10 @@ function renderSessions() {
   }
   list.innerHTML = recent.map(s=>{
     const delta = Math.round(((s.p1||0)-(s.p0||0))*100);
-    const extra = s.manual ? 'added manually' : (delta>0 ? `+${delta}% progress` : 'session');
+    const pages = sessionPages(s);
+    const mins = sessionMinutes(s);
+    const pace = pages && mins ? `${(pages/mins).toFixed(2)} pages/min` : '';
+    const extra = s.manual ? 'added manually' : (pages ? `${nfmt(pages)} pages${pace ? ` · ${pace}` : ''}` : (delta>0 ? `+${delta}% progress` : 'session'));
     return `<div class="srow">
       <div class="sdot${s.manual?' manual':''}"></div>
       <div class="sinf">
@@ -2491,6 +2577,8 @@ async function setupLocations(book, bookId) {
       if (total > 0) {
         A.totalPages = total;
         A.locationsReady = true;
+        const meta = A.books.find(b => b.id === bookId);
+        if (meta && meta.pageCount !== total) { meta.pageCount = total; if (!A.progress[bookId]) A.progress[bookId] = {}; A.progress[bookId].pageCount = total; persist(); }
         refreshLocationStatus();
         return;
       }
@@ -2501,6 +2589,10 @@ async function setupLocations(book, bookId) {
     if (A.epubBook !== book) return;                 // book was closed mid-generate
     A.totalPages = book.locations.total || (book.locations.length?.()) || 0;
     A.locationsReady = A.totalPages > 0;
+    if (A.totalPages > 0) {
+      const meta = A.books.find(b => b.id === bookId);
+      if (meta && meta.pageCount !== A.totalPages) { meta.pageCount = A.totalPages; if (!A.progress[bookId]) A.progress[bookId] = {}; A.progress[bookId].pageCount = A.totalPages; persist(); }
+    }
     try { await idbSet(cacheKey, book.locations.save()); } catch(_) {}
     refreshLocationStatus();
   } catch(e) { console.error('Location generation failed:', e); }
@@ -3057,11 +3149,14 @@ function stopTimer() {
   if (A.elapsed < 10 || !A.bookId) return;
   const bk = A.books.find(b => b.id === A.bookId);
   const prog = A.progress[A.bookId] || {};
+  const p1 = prog.pct || A.sessP0;
+  const pageTotal = Math.round(bk?.pageCount || prog.pageCount || A.totalPages || 0);
+  const pagesRead = pageTotal ? Math.max(0, Math.round(Math.max(0, p1 - A.sessP0) * pageTotal)) : 0;
   A.sessions.push({
     id: uid(), bookId: A.bookId, bookTitle: bk?.title || 'Unknown',
     start: new Date(Date.now() - A.elapsed*1000).toISOString(),
     end: new Date().toISOString(),
-    secs: A.elapsed, p0: A.sessP0, p1: prog.pct || A.sessP0,
+    secs: A.elapsed, p0: A.sessP0, p1, pagesRead,
   });
   if (!A.progress[A.bookId]) A.progress[A.bookId] = {};
   A.progress[A.bookId].totalSecs = (A.progress[A.bookId].totalSecs||0) + A.elapsed;
