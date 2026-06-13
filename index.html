@@ -28,6 +28,7 @@
   --border:   #E4DFD4;
   --rbg:      #FBF8F2;
   --gold:     #C9962E;
+  --imsg:     #007AFF;
   --shadow:   0 2px 12px rgba(0,0,0,0.07);
   --shadowLg: 0 8px 28px rgba(0,0,0,0.13);
   --r:        14px;
@@ -232,10 +233,10 @@ html,body{height:100%;height:100dvh;background:#C8C3BC;
 .bchart{display:flex;align-items:flex-end;gap:6px;height:80px;position:relative}
 .bcol{flex:1;display:flex;flex-direction:column;align-items:center;
   justify-content:flex-end;gap:5px;height:100%}
-.bar{width:100%;background:var(--accent);border-radius:4px 4px 0 0;min-height:3px;opacity:.65}
+.bar{width:100%;background:var(--imsg);border-radius:4px 4px 0 0;min-height:3px;opacity:.72}
 .bar.today{opacity:1}
 .bar.zero{opacity:.18}
-.bar.met{background:var(--gold);opacity:.9}
+.bar.met{background:var(--imsg);opacity:.95}
 .blbl{font-size:9px;color:var(--sub);font-weight:600}
 .pacechart{height:172px;position:relative;overflow:hidden}
 .pace-svg{width:100%;height:154px;display:block;overflow:visible}
@@ -403,7 +404,9 @@ input[type=file]{display:none}
 #reader.t-night{--read-bg:#000000;--read-fg:#D9D9DE;--read-sub:#7E7E88;--read-panel:rgba(32,32,35,.94);--read-sheet:rgba(26,26,28,.98);--read-link:#8FA8D8}
 #reader.t-focus,#reader.t-night{color-scheme:dark}
 #app.reader-open{max-width:none!important;width:100vw!important;box-shadow:none!important;background:var(--read-bg)!important}
-body.reader-open{background:var(--read-bg)!important}
+body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;position:fixed;width:100%;height:100%;overscroll-behavior:none}
+#reader,#reader .rbody,#viewerWrap,#viewer{overflow:hidden!important;overscroll-behavior:none;touch-action:none}
+#reader .sheet-backdrop,#reader .sheet,#reader .sheet-body,#reader .sheet-body *{touch-action:auto}
 .rbody{flex:1;position:relative;overflow:hidden;background:var(--read-bg)!important}
 
 /* viewer + page-turn animation wrapper */
@@ -412,7 +415,7 @@ body.reader-open{background:var(--read-bg)!important}
 #viewerWrap.anim{transition:transform .16s ease-out,opacity .16s ease-out}
 #viewerWrap.anim-in{transition:transform .19s cubic-bezier(.22,1,.36,1),opacity .19s ease-out}
 #viewer{position:absolute;inset:0;width:100%;background:var(--read-bg)!important;overflow:hidden}
-#reader.flow-scroll #viewer{overflow:visible}
+#reader.flow-scroll #viewer{overflow:hidden!important}
 #viewer iframe{border:0!important;background:var(--read-bg)!important}
 .rload{position:absolute;inset:0;z-index:20;background:var(--read-bg)!important;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
@@ -869,7 +872,6 @@ body.reader-open{background:var(--read-bg)!important}
             <div class="setting-label">Layout</div>
             <div class="seg" id="flowSeg">
               <button data-flow="paginated">Pages</button>
-              <button data-flow="scrolled-doc">Vertical Scroll</button>
             </div>
             <div class="setting-label" style="margin-top:14px">Page Turn</div>
             <div class="seg" id="animSeg">
@@ -878,6 +880,7 @@ body.reader-open{background:var(--read-bg)!important}
               <button data-anim="none">None</button>
             </div>
             <div class="toggle-row" style="margin-top:14px"><span>Swipe to turn pages</span><button class="switch" id="swipeSwitch"></button></div>
+            <div class="toggle-row"><span>Keep screen awake</span><button class="switch" id="wakeSwitch"></button></div>
           </div>
         </div>
       </div>
@@ -1015,7 +1018,7 @@ body.reader-open{background:var(--read-bg)!important}
 </div>
 
 <script>
-const FOLIO_VERSION = 'v27-bookmark-sessions';
+const FOLIO_VERSION = 'v29-blue-reading-bars';
 const CHARS_PER_PAGE = 1800;   // ≈ Apple Books / print pagination density
 
 function dbg(msg) {}
@@ -1084,7 +1087,7 @@ async function idbDelete(key) {
 const DEFAULT_SETTINGS = {
   theme:'paper', fontSize:100, font:'original', bold:false,
   lineHeight:1.6, margins:'normal', justify:false,
-  flow:'paginated', pageAnim:'slide', swipe:true, brightness:100,
+  flow:'paginated', pageAnim:'slide', swipe:true, keepAwake:true, brightness:100,
 };
 const A = {
   books: [], sessions: [], progress: {}, bookmarks: {},
@@ -1104,6 +1107,7 @@ const A = {
   reorderMode: false, draggingBookEl: null, dragPlaceholder: null, savedFolderName: '',
   selectedBookIds: new Set(), selectionMode: false, dragMoved: false,
   dragAutoScrollFrame: null, dragAutoScrollY: 0,
+  wakeLock: null, wakeLockWarned: false,
   sessionsVisible: 10,
 };
 
@@ -1165,6 +1169,7 @@ async function hydrate() {
   if (typeof saved.animation === 'boolean' && typeof saved.swipe !== 'boolean') saved.swipe = saved.animation;
   delete saved.animation;
   A.readerSettings = Object.assign({}, DEFAULT_SETTINGS, saved);
+  A.readerSettings.flow = 'paginated';  // vertical scrolling is intentionally disabled in reader mode
   // Books finished long ago by progress get a finished flag once.
   A.books.forEach(b => {
     if (!b.finished && (A.progress[b.id]?.pct || 0) >= 0.99) {
@@ -2672,11 +2677,12 @@ function themeDef() {
 
 function applyReaderSettings() {
   const s = A.readerSettings;
+  s.flow = 'paginated';
   const r = document.getElementById('reader');
   if (r) {
     THEMES.forEach(t => r.classList.remove('t-'+t.id));
     r.classList.add('t-'+themeDef().id);
-    r.classList.toggle('flow-scroll', s.flow !== 'paginated');
+    r.classList.remove('flow-scroll');
   }
   // Brightness dimmer
   const bo = document.getElementById('brightOverlay');
@@ -2699,6 +2705,7 @@ function applyEpubTheme() {
     'background': t.bg + ' !important',
     'color': t.fg + ' !important',
     'line-height': `${s.lineHeight} !important`,
+    'overflow': 'hidden !important',
   };
   const para = { 'line-height': `${s.lineHeight} !important` };
   if (s.bold)   { body['font-weight'] = '600 !important'; para['font-weight'] = '600 !important'; }
@@ -2722,6 +2729,8 @@ function applyEpubTheme() {
         doc.documentElement.style.background = t.bg;
         doc.body.style.background = t.bg;
         doc.body.style.color = t.fg;
+        doc.documentElement.style.overflow = 'hidden';
+        doc.body.style.overflow = 'hidden';
       } catch(_) {}
     });
   } catch(_) {}
@@ -2745,10 +2754,37 @@ function syncSettingsUI() {
   document.getElementById('boldSwitch')?.classList.toggle('on', !!s.bold);
   document.getElementById('justifySwitch')?.classList.toggle('on', !!s.justify);
   document.getElementById('swipeSwitch')?.classList.toggle('on', !!s.swipe);
+  document.getElementById('wakeSwitch')?.classList.toggle('on', !!s.keepAwake);
   const br = document.getElementById('brightSlider');
   if (br && Number(br.value) !== (s.brightness||100)) br.value = s.brightness||100;
   document.getElementById('animSeg').style.opacity = s.flow==='paginated' ? '1':'0.4';
   document.getElementById('animSeg').style.pointerEvents = s.flow==='paginated' ? 'auto':'none';
+}
+
+async function requestWakeLock(showToast = false) {
+  const reader = document.getElementById('reader');
+  if (!A.readerSettings.keepAwake || !reader?.classList.contains('active')) return;
+  if (!('wakeLock' in navigator)) {
+    if (showToast || !A.wakeLockWarned) toast('Keep Screen Awake is not available on this device/browser.');
+    A.wakeLockWarned = true;
+    return;
+  }
+  try {
+    if (A.wakeLock && !A.wakeLock.released) return;
+    A.wakeLock = await navigator.wakeLock.request('screen');
+    A.wakeLock.addEventListener('release', () => { A.wakeLock = null; });
+    A.wakeLockWarned = false;
+  } catch(e) {
+    console.warn('Wake lock failed:', e);
+    if (showToast || !A.wakeLockWarned) toast('Keep Screen Awake could not be enabled.');
+    A.wakeLockWarned = true;
+  }
+}
+
+async function releaseWakeLock() {
+  if (!A.wakeLock) return;
+  try { await A.wakeLock.release(); } catch(_) {}
+  A.wakeLock = null;
 }
 
 /* ── Pagination: fixed virtual pages, Apple-Books density ──────── */
@@ -3047,6 +3083,11 @@ function wireReaderControlsOnce() {
     if (e.touches.length !== 1) return;
     A.swipeX = e.touches[0].clientX; A.swipeY = e.touches[0].clientY; A.didSwipe = false;
   }, {passive:true});
+  rbody.addEventListener('touchmove', e => {
+    if (!document.getElementById('reader')?.classList.contains('active')) return;
+    if (document.querySelector('#reader .sheet-backdrop.on')) return;
+    if (e.touches && e.touches.length === 1) e.preventDefault();
+  }, {passive:false});
   rbody.addEventListener('touchend', e => {
     if (!A.readerSettings.swipe || A.readerSettings.flow !== 'paginated') return;
     if (A.didSwipe || !e.changedTouches.length) return;
@@ -3118,11 +3159,15 @@ function wireReaderControlsOnce() {
   /* Switches */
   const wireSwitch = (id, key, after) => $(id).addEventListener('click', async () => {
     A.readerSettings[key] = !A.readerSettings[key];
-    applyReaderSettings(); await persist(); if (after) after();
+    applyReaderSettings(); await persist(); if (after) await after();
   });
   wireSwitch('boldSwitch', 'bold');
   wireSwitch('justifySwitch', 'justify');
   wireSwitch('swipeSwitch', 'swipe');
+  wireSwitch('wakeSwitch', 'keepAwake', async () => {
+    if (A.readerSettings.keepAwake) await requestWakeLock(true);
+    else await releaseWakeLock();
+  });
 
   /* Segmented controls */
   $('lineSeg').querySelectorAll('button').forEach(b =>
@@ -3143,10 +3188,8 @@ function wireReaderControlsOnce() {
     }));
   $('flowSeg').querySelectorAll('button').forEach(b =>
     b.addEventListener('click', async () => {
-      if (A.readerSettings.flow === b.dataset.flow) return;
-      A.readerSettings.flow = b.dataset.flow;
+      A.readerSettings.flow = 'paginated';
       applyReaderSettings(); await persist();
-      await remountRendition();
     }));
 
   /* Brightness */
@@ -3182,6 +3225,7 @@ async function openReader(bookId) {
   document.getElementById('bnav').style.display = 'none';
   wireReaderControlsOnce();
   applyReaderSettings();
+  requestWakeLock();
 
   const stored = await getEpub(bookId);
   if (!stored) {
@@ -3228,10 +3272,8 @@ function attachRendition(rend, bookId) {
 }
 
 function renditionOpts() {
-  const flow = A.readerSettings.flow === 'paginated' ? 'paginated' : 'scrolled-doc';
-  return flow === 'paginated'
-    ? { width:'100%', height:'100%', spread:'none', flow:'paginated', manager:'default' }
-    : { width:'100%', height:'100%', spread:'none', flow:'scrolled-doc', manager:'continuous' };
+  A.readerSettings.flow = 'paginated';
+  return { width:'100%', height:'100%', spread:'none', flow:'paginated', manager:'default' };
 }
 
 async function mountEpub(buf, bkMeta) {
@@ -3301,6 +3343,7 @@ function teardown() {
 }
 
 function closeReader(save = true) {
+  releaseWakeLock();
   if (save) stopTimer();
   else if (A.timerInt) { clearInterval(A.timerInt); A.timerInt = null; }
   teardown();
@@ -3352,6 +3395,11 @@ function stopTimer() {
 
 document.addEventListener('visibilitychange', () => {
   if (A.timerInt) A.paused = document.hidden;
+  if (document.hidden) {
+    releaseWakeLock();
+  } else if (document.getElementById('reader')?.classList.contains('active')) {
+    requestWakeLock();
+  }
 });
 
 /* ── Boot ──────────────────────────────────────────────────────── */
