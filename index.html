@@ -5,19 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="BookMark">
+<meta name="apple-mobile-web-app-title" content="Folio">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#F6F3ED" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#101216" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
-<title>BookMark</title>
+<title>Folio</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" onload="window.__jszipLoaded=true" onerror="window.__jszipError=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.legacy.min.js" onload="window.__epubLoaded=true" onerror="window.__epubError=true"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" onload="window.__h2cLoaded=true" onerror="window.__h2cError=true"></script>
 <style>
 :root {
   --bg:       #F6F3ED;
@@ -29,7 +28,6 @@
   --border:   #E4DFD4;
   --rbg:      #FBF8F2;
   --gold:     #C9962E;
-  --imsg:     #007AFF;
   --shadow:   0 2px 12px rgba(0,0,0,0.07);
   --shadowLg: 0 8px 28px rgba(0,0,0,0.13);
   --r:        14px;
@@ -234,21 +232,11 @@ html,body{height:100%;height:100dvh;background:#C8C3BC;
 .bchart{display:flex;align-items:flex-end;gap:6px;height:80px;position:relative}
 .bcol{flex:1;display:flex;flex-direction:column;align-items:center;
   justify-content:flex-end;gap:5px;height:100%}
-.bar{width:100%;background:var(--imsg);border-radius:4px 4px 0 0;min-height:3px;opacity:.72}
+.bar{width:100%;background:var(--accent);border-radius:4px 4px 0 0;min-height:3px;opacity:.65}
 .bar.today{opacity:1}
 .bar.zero{opacity:.18}
-.bar.met{background:var(--imsg);opacity:.95}
+.bar.met{background:var(--gold);opacity:.9}
 .blbl{font-size:9px;color:var(--sub);font-weight:600}
-.pacechart{height:172px;position:relative;overflow:hidden}
-.pace-svg{width:100%;height:154px;display:block;overflow:visible}
-.pace-grid{stroke:var(--border);stroke-width:1;opacity:.85}
-.pace-axis{fill:var(--sub);font-size:10px;font-weight:700}
-.pace-line{fill:none;stroke:#22B8CF;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
-.pace-dot{fill:#22B8CF;stroke:var(--card);stroke-width:2}
-.pace-fill{fill:#22B8CF;opacity:.12}
-.pace-legend{display:flex;align-items:center;gap:6px;margin-top:2px;color:var(--sub);font-size:11px;font-weight:700}
-.pace-legend .key{width:9px;height:9px;border-radius:50%;background:#22B8CF;display:inline-block}
-.pace-empty{height:138px;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--sub);font-size:13px;line-height:1.45}
 
 .ssec h3{font-size:14px;font-weight:700;margin-bottom:12px}
 .srow{background:var(--card);border-radius:var(--rsm);padding:12px 14px;
@@ -261,9 +249,6 @@ html,body{height:100%;height:100dvh;background:#C8C3BC;
 .sdur{font-size:15px;font-weight:800;color:var(--accent);flex-shrink:0}
 .sdel{background:none;border:none;color:var(--sub);font-size:15px;cursor:pointer;
   padding:4px 2px;flex-shrink:0;opacity:.55}
-.show-more-sessions{width:100%;border:0;border-radius:var(--rsm);background:rgba(45,106,79,.10);
-  color:var(--accent);font-size:14px;font-weight:800;padding:13px 14px;margin-top:8px;cursor:pointer}
-.show-more-sessions:active{transform:scale(.98)}
 .nodata{text-align:center;color:var(--sub);font-size:14px;padding:32px;line-height:1.65}
 
 .year-books-card{background:var(--card);border-radius:var(--r);padding:18px 12px 20px;
@@ -405,9 +390,7 @@ input[type=file]{display:none}
 #reader.t-night{--read-bg:#000000;--read-fg:#D9D9DE;--read-sub:#7E7E88;--read-panel:rgba(32,32,35,.94);--read-sheet:rgba(26,26,28,.98);--read-link:#8FA8D8}
 #reader.t-focus,#reader.t-night{color-scheme:dark}
 #app.reader-open{max-width:none!important;width:100vw!important;box-shadow:none!important;background:var(--read-bg)!important}
-body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;position:fixed;width:100%;height:100%;overscroll-behavior:none}
-#reader,#reader .rbody,#viewerWrap,#viewer{overflow:hidden!important;overscroll-behavior:none;touch-action:none}
-#reader .sheet-backdrop,#reader .sheet,#reader .sheet-body,#reader .sheet-body *{touch-action:auto}
+body.reader-open{background:var(--read-bg)!important}
 .rbody{flex:1;position:relative;overflow:hidden;background:var(--read-bg)!important}
 
 /* viewer + page-turn animation wrapper */
@@ -415,11 +398,8 @@ body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;p
   will-change:transform,opacity;transition:none}
 #viewerWrap.anim{transition:transform .16s ease-out,opacity .16s ease-out}
 #viewerWrap.anim-in{transition:transform .19s cubic-bezier(.22,1,.36,1),opacity .19s ease-out}
-#curlCanvas{position:absolute;left:0;right:0;top:0;bottom:0;width:100%;
-  z-index:50;pointer-events:none;display:none}
-#curlCanvas.on{display:block}
 #viewer{position:absolute;inset:0;width:100%;background:var(--read-bg)!important;overflow:hidden}
-#reader.flow-scroll #viewer{overflow:hidden!important}
+#reader.flow-scroll #viewer{overflow:visible}
 #viewer iframe{border:0!important;background:var(--read-bg)!important}
 .rload{position:absolute;inset:0;z-index:20;background:var(--read-bg)!important;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
@@ -599,15 +579,18 @@ body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;p
 <body>
 <input type="file" id="fi" multiple>
 <input type="file" id="folderFi" multiple webkitdirectory directory>
-<input type="file" id="backupFi" accept=".json,.bookmark-backup.json,.folio-backup.json,application/json">
-<input type="file" id="csvFi" accept=".csv,text/csv,text/plain">
+<input type="file" id="backupFi" accept=".json,.folio-backup.json,application/json">
 <div id="app">
 
   <!-- ════════ LIBRARY ════════ -->
   <div class="screen active" id="lib">
     <div class="hdr">
       <div class="hdr-left">
-        <h1>BookMark</h1>
+        <h1>Folio</h1>
+        <div class="header-debug" id="debugRefresh">
+          <span class="ver" id="versionLabel">v23-continue-goal</span>
+          <a id="refreshBtn" href="./" role="button">Update</a>
+        </div>
       </div>
       <div class="hdr-actions">
         <button class="home-goal-btn" id="homeGoalBtn" type="button" title="Today's reading goal">
@@ -722,37 +705,11 @@ body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;p
           <div class="stval" id="sweek">0m</div>
           <div class="stsub">last 7 days</div>
         </div>
-        <div class="stcard">
-          <div class="stlbl">Total Pages</div>
-          <div class="stval" id="spages">0</div>
-          <div class="stsub">all time</div>
-        </div>
-        <div class="stcard">
-          <div class="stlbl">Avg Pages</div>
-          <div class="stval" id="spavg">0</div>
-          <div class="stsub">per session</div>
-        </div>
-        <div class="stcard">
-          <div class="stlbl">Pages This Week</div>
-          <div class="stval" id="spweek">0</div>
-          <div class="stsub">last 7 days</div>
-        </div>
-        <div class="stcard">
-          <div class="stlbl">Avg Pace</div>
-          <div class="stval" id="spaceavg">0.00</div>
-          <div class="stsub">pages/min</div>
-        </div>
       </div>
       <div class="chcard">
         <h3>Last 7 Days</h3>
         <div class="bchartwrap" id="chartwrap">
           <div class="bchart" id="chart"></div>
-        </div>
-      </div>
-      <div class="chcard">
-        <h3>Reading Pace · Last 7 Days</h3>
-        <div class="bchartwrap" id="paceChartWrap">
-          <div class="pacechart" id="paceChart"></div>
         </div>
       </div>
       <div class="year-books-card" id="booksYearCard"></div>
@@ -763,8 +720,6 @@ body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;p
           <button id="restoreBackupBtn" type="button">Restore Backup</button>
           <button id="protectDataBtn" type="button">Protect Database</button>
           <button id="folderRescanBtn" type="button">Rescan Folder</button>
-          <button id="manualSessionBtn" type="button">Add Manual Session</button>
-          <button id="importCsvBtn" type="button">Import CSV</button>
         </div>
         <div class="storage-note" id="storageStatus">Local database active.</div>
       </div>
@@ -794,7 +749,6 @@ body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;p
     <div class="rbody">
       <div class="reader-status-top" id="sectionLeft"></div>
       <div id="viewerWrap"><div id="viewer"></div></div>
-      <canvas id="curlCanvas"></canvas>
       <div id="brightOverlay"></div>
       <div class="tzone" id="tprev"></div>
       <div class="tzone" id="tmenu"></div>
@@ -877,16 +831,15 @@ body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;p
             <div class="setting-label">Layout</div>
             <div class="seg" id="flowSeg">
               <button data-flow="paginated">Pages</button>
+              <button data-flow="scrolled-doc">Vertical Scroll</button>
             </div>
             <div class="setting-label" style="margin-top:14px">Page Turn</div>
             <div class="seg" id="animSeg">
               <button data-anim="slide">Slide</button>
-              <button data-anim="curl">Curl</button>
               <button data-anim="fade">Fade</button>
               <button data-anim="none">None</button>
             </div>
             <div class="toggle-row" style="margin-top:14px"><span>Swipe to turn pages</span><button class="switch" id="swipeSwitch"></button></div>
-            <div class="toggle-row"><span>Keep screen awake</span><button class="switch" id="wakeSwitch"></button></div>
           </div>
         </div>
       </div>
@@ -971,11 +924,7 @@ body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;p
         <select id="dsBook"></select>
         <div class="row2">
           <div><label>Minutes</label><input type="number" id="dsMins" min="1" max="720" inputmode="numeric" placeholder="20"></div>
-          <div><label>Pages</label><input type="number" id="dsPages" min="0" max="5000" inputmode="numeric" placeholder="optional"></div>
-        </div>
-        <div class="row2">
           <div><label>Start time</label><input type="time" id="dsTime" value="20:00"></div>
-          <div><label>End time</label><input type="time" id="dsEndTime" placeholder="optional"></div>
         </div>
       </div>
       <div class="btnrow">
@@ -1024,7 +973,7 @@ body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;p
 </div>
 
 <script>
-const FOLIO_VERSION = 'v33-fold-fixes';
+const FOLIO_VERSION = 'v23-continue-goal';
 const CHARS_PER_PAGE = 1800;   // ≈ Apple Books / print pagination density
 
 function dbg(msg) {}
@@ -1093,7 +1042,7 @@ async function idbDelete(key) {
 const DEFAULT_SETTINGS = {
   theme:'paper', fontSize:100, font:'original', bold:false,
   lineHeight:1.6, margins:'normal', justify:false,
-  flow:'paginated', pageAnim:'slide', swipe:true, keepAwake:true, brightness:100,
+  flow:'paginated', pageAnim:'slide', swipe:true, brightness:100,
 };
 const A = {
   books: [], sessions: [], progress: {}, bookmarks: {},
@@ -1110,12 +1059,9 @@ const A = {
   calY: new Date().getFullYear(), calM: new Date().getMonth(),
   daySheetKey: null, finishBookId: null,
   longPressTmr: null, longPressed: false,
-  pageSnap: null, snapTmr: null, curlBg: '#FBF8F2',
   reorderMode: false, draggingBookEl: null, dragPlaceholder: null, savedFolderName: '',
   selectedBookIds: new Set(), selectionMode: false, dragMoved: false,
   dragAutoScrollFrame: null, dragAutoScrollY: 0,
-  wakeLock: null, wakeLockWarned: false,
-  sessionsVisible: 10,
 };
 
 const STATE_KEYS = ['f_books','f_sessions','f_progress','f_reader_settings','f_goal','f_bookmarks','f_saved_folder_name'];
@@ -1176,7 +1122,6 @@ async function hydrate() {
   if (typeof saved.animation === 'boolean' && typeof saved.swipe !== 'boolean') saved.swipe = saved.animation;
   delete saved.animation;
   A.readerSettings = Object.assign({}, DEFAULT_SETTINGS, saved);
-  A.readerSettings.flow = 'paginated';  // vertical scrolling is intentionally disabled in reader mode
   // Books finished long ago by progress get a finished flag once.
   A.books.forEach(b => {
     if (!b.finished && (A.progress[b.id]?.pct || 0) >= 0.99) {
@@ -1839,7 +1784,6 @@ function openDetails(id) {
 const fi = document.getElementById('fi');
 const folderFi = document.getElementById('folderFi');
 const backupFi = document.getElementById('backupFi');
-const csvFi = document.getElementById('csvFi');
 
 function openLibraryTools() { openAppSheet('libraryToolsSheet'); }
 document.getElementById('addbtn').addEventListener('click', openLibraryTools);
@@ -1853,8 +1797,6 @@ wireToolButton('exportBackupBtn', exportBackup);
 wireToolButton('restoreBackupBtn', () => backupFi.click());
 wireToolButton('protectDataBtn', () => requestPersistentStorage(true));
 wireToolButton('folderRescanBtn', rescanFolder);
-wireToolButton('manualSessionBtn', () => openDaySheet(dayKey(new Date())));
-wireToolButton('importCsvBtn', () => csvFi?.click());
 
 document.querySelectorAll('[data-libtool]').forEach(b => b.addEventListener('click', () => {
   closeAppSheet('libraryToolsSheet');
@@ -1927,12 +1869,6 @@ backupFi.addEventListener('change', async e => {
   const file = e.target.files?.[0];
   if (file) await restoreBackup(file);
   backupFi.value='';
-});
-
-csvFi?.addEventListener('change', async e => {
-  const file = e.target.files?.[0];
-  if (file) await importCsvSessions(file);
-  csvFi.value='';
 });
 
 async function batchImportFiles(files, opts={}) {
@@ -2175,8 +2111,6 @@ function openDaySheet(k) {
   sel.innerHTML = `<option value="">No specific book</option>` +
     A.books.map(b=>`<option value="${b.id}">${esc(b.title)}</option>`).join('');
   document.getElementById('dsMins').value = '';
-  document.getElementById('dsPages').value = '';
-  document.getElementById('dsEndTime').value = '';
   document.getElementById('dsTime').value = (k === dayKey(new Date()))
     ? new Date().toTimeString().slice(0,5) : '20:00';
   renderDaySessions();
@@ -2202,7 +2136,7 @@ function renderDaySessions() {
       <div class="sdot${s.manual?' manual':''}"></div>
       <div class="sinf">
         <div class="sbook">${esc(s.bookTitle||'Reading session')}</div>
-        <div class="smeta">${new Date(s.start).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}${sessionPages(s) ? ` · ${sessionPages(s)} pg` : ''}${s.manual?' · added manually':''}</div>
+        <div class="smeta">${new Date(s.start).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}${s.manual?' · added manually':''}</div>
       </div>
       <div class="sdur">${fmt(s.secs)}</div>
       <button class="sdel" data-sid="${s.id}" title="Delete">✕</button>
@@ -2215,41 +2149,27 @@ function renderDaySessions() {
   }));
 }
 document.getElementById('dsAdd').addEventListener('click', async () => {
-  let mins = parseInt(document.getElementById('dsMins').value, 10);
-  const pages = Math.max(0, Math.round(parseNumberLoose(document.getElementById('dsPages').value) || 0));
+  const mins = parseInt(document.getElementById('dsMins').value, 10);
+  if (!mins || mins < 1) { toast('Enter how many minutes you read'); return; }
   const time = document.getElementById('dsTime').value || '20:00';
-  const endTime = document.getElementById('dsEndTime').value || '';
   const bookId = document.getElementById('dsBook').value || null;
   const bk = bookId ? A.books.find(b=>b.id===bookId) : null;
   const [hh,mm] = time.split(':').map(Number);
   const d = keyToDate(A.daySheetKey);
   d.setHours(hh||0, mm||0, 0, 0);
   if (d > new Date()) { toast("Can't log reading in the future"); return; }
-  let end = null;
-  if (endTime) {
-    const [eh,em] = endTime.split(':').map(Number);
-    end = keyToDate(A.daySheetKey);
-    end.setHours(eh||0, em||0, 0, 0);
-    if (end < d) end = new Date(end.getTime() + 86400000);
-    const calcMins = Math.round((end - d) / 60000);
-    if ((!mins || mins < 1) && calcMins > 0) mins = calcMins;
-  }
-  if (!mins || mins < 1) { toast('Enter minutes, or enter a start and end time'); return; }
   const secs = Math.min(720, mins) * 60;
-  if (!end) end = new Date(d.getTime()+secs*1000);
   A.sessions.push({
     id: uid(), manual: true,
     bookId, bookTitle: bk?.title || 'Manual entry',
     start: d.toISOString(),
-    end: end.toISOString(),
-    secs, p0: 0, p1: 0, pagesRead: pages,
+    end: new Date(d.getTime()+secs*1000).toISOString(),
+    secs, p0: 0, p1: 0,
   });
   await persist();
   document.getElementById('dsMins').value = '';
-  document.getElementById('dsPages').value = '';
-  document.getElementById('dsEndTime').value = '';
   renderDaySessions(); renderJournal(); renderStats(); renderLib();
-  toast(`Added ${mins} min${pages ? ` · ${pages} pages` : ''} on ${d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}`);
+  toast(`Added ${mins} min on ${d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}`);
 });
 
 /* ── Journal: finished-books timeline ──────────────────────────── */
@@ -2293,48 +2213,18 @@ function renderJournal() {
 }
 
 /* ── Stats ─────────────────────────────────────────────────────── */
-function bookPageCount(bookId) {
-  const b = A.books.find(x => x.id === bookId);
-  return Math.round(b?.pageCount || A.progress[bookId]?.pageCount || 0);
-}
-function sessionPages(s) {
-  if (!s) return 0;
-  if (Number.isFinite(Number(s.pagesRead))) return Math.max(0, Math.round(Number(s.pagesRead)));
-  if (Number.isFinite(Number(s.pages))) return Math.max(0, Math.round(Number(s.pages)));
-  const total = bookPageCount(s.bookId);
-  if (!total) return 0;
-  const p0 = Number(s.p0 || 0), p1 = Number(s.p1 || 0);
-  return Math.max(0, Math.round(Math.max(0, p1 - p0) * total));
-}
-function sessionMinutes(s) {
-  return Math.max(0, Number(s?.secs || 0) / 60);
-}
-function sessionsSince(ms) {
-  return A.sessions.filter(s => new Date(s.start).getTime() >= ms);
-}
-
 function renderStats() {
   const total = A.sessions.reduce((a,s)=>a+(s.secs||0),0);
   const avg   = A.sessions.length ? total/A.sessions.length : 0;
   const done  = A.books.filter(b=>b.finished).length;
   const weekAgo = Date.now()-7*86400000;
-  const weekSessions = sessionsSince(weekAgo);
-  const week  = weekSessions.reduce((a,s)=>a+(s.secs||0),0);
-  const totalPages = A.sessions.reduce((a,s)=>a+sessionPages(s),0);
-  const totalMins  = A.sessions.reduce((a,s)=>a+sessionMinutes(s),0);
-  const avgPages   = A.sessions.length ? totalPages/A.sessions.length : 0;
-  const avgPace    = totalMins > 0 ? totalPages/totalMins : 0;
-  const weekPages  = weekSessions.reduce((a,s)=>a+sessionPages(s),0);
+  const week  = A.sessions.filter(s=>new Date(s.start)>=weekAgo)
+    .reduce((a,s)=>a+(s.secs||0),0);
   document.getElementById('stot').textContent  = fmt(total);
   document.getElementById('sdone').textContent = done;
   document.getElementById('savg').textContent  = fmt(avg);
   document.getElementById('sweek').textContent = fmt(week);
-  document.getElementById('spages').textContent = nfmt(totalPages);
-  document.getElementById('spavg').textContent  = nfmt(Math.round(avgPages));
-  document.getElementById('spweek').textContent = nfmt(weekPages);
-  document.getElementById('spaceavg').textContent = avgPace ? avgPace.toFixed(2) : '0.00';
-  A.sessionsVisible = Math.max(10, A.sessionsVisible || 10);
-  renderChart(); renderPaceChart(); renderBooksReadThisYear(); renderSessions(); updateStorageStatus();
+  renderChart(); renderBooksReadThisYear(); renderSessions(); updateStorageStatus();
 }
 
 function renderChart() {
@@ -2358,57 +2248,14 @@ function renderChart() {
       <div class="blbl">${d.lbl}</div>
     </div>`;
   }).join('');
+  // Dashed goal line over the bars
   wrap.querySelector('.goal-line')?.remove();
   const gl = document.createElement('div');
   gl.className = 'goal-line';
-  const bottom = 14 + Math.round((goal/max)*72);
+  const bottom = 14 + Math.round((goal/max)*72);   // 14px label row below bars
   gl.style.bottom = bottom + 'px';
   gl.innerHTML = `<span>${goal}m goal</span>`;
   wrap.appendChild(gl);
-}
-
-function renderPaceChart() {
-  const chart = document.getElementById('paceChart');
-  if (!chart) return;
-  const days = [];
-  for (let i=6; i>=0; i--) {
-    const d = new Date(Date.now()-i*86400000);
-    const key = dayKey(d);
-    const sessions = A.sessions.filter(s => dayKey(s.start) === key);
-    const mins = sessions.reduce((a,s)=>a+sessionMinutes(s),0);
-    const pages = sessions.reduce((a,s)=>a+sessionPages(s),0);
-    const pace = mins > 0 && pages > 0 ? pages / mins : null;
-    days.push({ key, mins, pages, pace, lbl: i===0 ? 'Today' : d.toLocaleDateString('en-US',{weekday:'short'}) });
-  }
-  const valid = days.filter(d => Number.isFinite(d.pace));
-  if (!valid.length) {
-    chart.innerHTML = `<div class="pace-empty">No page-based pace yet.<br>Add pages to sessions or import your CSV.</div>`;
-    return;
-  }
-  const w = 320, h = 160, l = 34, r = 14, t = 14, b = 28;
-  const plotW = w - l - r, plotH = h - t - b;
-  const maxPace = Math.max(0.25, Math.ceil(Math.max(...valid.map(d=>d.pace))*100)/100);
-  const x = idx => l + (plotW * idx / Math.max(1, days.length-1));
-  const y = pace => t + plotH - ((pace || 0) / maxPace) * plotH;
-  const pts = days.map((d,i) => Number.isFinite(d.pace) ? {x:x(i), y:y(d.pace), d} : null);
-  const line = pts.filter(Boolean).map((p,i)=>(i?'L':'M') + p.x.toFixed(1) + ' ' + p.y.toFixed(1)).join(' ');
-  const fillPts = pts.filter(Boolean);
-  const fill = fillPts.length ? `${line} L ${fillPts[fillPts.length-1].x.toFixed(1)} ${t+plotH} L ${fillPts[0].x.toFixed(1)} ${t+plotH} Z` : '';
-  const grid = [0,.25,.5,.75,1].map(fr => {
-    const yy = t + plotH - fr*plotH;
-    const val = (fr*maxPace).toFixed(2);
-    return `<line class="pace-grid" x1="${l}" y1="${yy}" x2="${w-r}" y2="${yy}"></line><text class="pace-axis" x="2" y="${yy+3}">${val}</text>`;
-  }).join('');
-  const labels = days.map((d,i)=>`<text class="pace-axis" x="${x(i)}" y="${h-8}" text-anchor="middle">${d.lbl.slice(0,3)}</text>`).join('');
-  const dots = pts.filter(Boolean).map(p=>`<circle class="pace-dot" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4"><title>${p.d.lbl}: ${p.d.pace.toFixed(2)} pages/min</title></circle>`).join('');
-  chart.innerHTML = `<svg class="pace-svg" viewBox="0 0 ${w} ${h}" role="img" aria-label="Reading pace over the last 7 days">
-    ${grid}
-    ${fill ? `<path class="pace-fill" d="${fill}"></path>` : ''}
-    <path class="pace-line" d="${line}"></path>
-    ${dots}
-    ${labels}
-  </svg>
-  <div class="pace-legend"><span class="key"></span><span>Pages per minute</span></div>`;
 }
 
 const YEARLY_BOOK_GOAL = 10;
@@ -2438,164 +2285,32 @@ function renderBooksReadThisYear() {
 }
 
 function renderSessions() {
-  const list = document.getElementById('slist');
-  const all = [...A.sessions]
-    .sort((a,b)=>new Date(b.start)-new Date(a.start));
-  if (!all.length) {
-    A.sessionsVisible = 10;
+  const list   = document.getElementById('slist');
+  const recent = [...A.sessions]
+    .sort((a,b)=>new Date(b.start)-new Date(a.start)).slice(0,25);
+  if (!recent.length) {
     list.innerHTML='<div class="nodata">No sessions yet.<br>Open a book to start reading!</div>';
     return;
   }
-  A.sessionsVisible = Math.max(10, A.sessionsVisible || 10);
-  const shown = all.slice(0, A.sessionsVisible);
-  const rows = shown.map(s=>{
+  list.innerHTML = recent.map(s=>{
     const delta = Math.round(((s.p1||0)-(s.p0||0))*100);
-    const pages = sessionPages(s);
-    const pace = pages && sessionMinutes(s) ? ` · ${(pages/sessionMinutes(s)).toFixed(2)} pg/min` : '';
-    const title = s.bookTitle || 'Reading session';
-    const extra = `${s.manual ? 'added manually' : (delta>0 ? `+${delta}% progress` : 'session')}${pages ? ` · ${pages} pg${pace}` : ''}`;
+    const extra = s.manual ? 'added manually' : (delta>0 ? `+${delta}% progress` : 'session');
     return `<div class="srow">
       <div class="sdot${s.manual?' manual':''}"></div>
       <div class="sinf">
-        <div class="sbook">${esc(title)}</div>
+        <div class="sbook">${esc(s.bookTitle)}</div>
         <div class="smeta">${fmtDate(s.start)} · ${extra}</div>
       </div>
       <div class="sdur">${fmt(s.secs)}</div>
       <button class="sdel" data-sid="${s.id}" title="Delete">✕</button>
     </div>`;
   }).join('');
-  const remaining = all.length - shown.length;
-  const more = remaining > 0
-    ? `<button class="show-more-sessions" id="showMoreSessions" type="button">Show 10 More · ${remaining} remaining</button>`
-    : '';
-  list.innerHTML = rows + more;
   list.querySelectorAll('.sdel').forEach(b => b.addEventListener('click', async () => {
     if (!confirm('Delete this reading session?')) return;
     A.sessions = A.sessions.filter(s=>s.id!==b.dataset.sid);
-    A.sessionsVisible = Math.min(Math.max(10, A.sessionsVisible || 10), Math.max(10, A.sessions.length));
     await persist();
-    renderStats(); renderLib(); renderJournal();
+    renderStats(); renderLib();
   }));
-  document.getElementById('showMoreSessions')?.addEventListener('click', () => {
-    A.sessionsVisible = Math.min(all.length, (A.sessionsVisible || 10) + 10);
-    renderSessions();
-  });
-}
-
-
-/* ── CSV import / manual session helpers ───────────────────────── */
-function parseNumberLoose(v) {
-  if (v === null || v === undefined) return 0;
-  const n = parseFloat(String(v).replace(/[^0-9.\-]/g, ''));
-  return Number.isFinite(n) ? n : 0;
-}
-function parseCsvText(text) {
-  const rows = [];
-  let row = [], cell = '', q = false;
-  for (let i=0; i<text.length; i++) {
-    const ch = text[i], next = text[i+1];
-    if (q) {
-      if (ch === '"' && next === '"') { cell += '"'; i++; }
-      else if (ch === '"') q = false;
-      else cell += ch;
-    } else {
-      if (ch === '"') q = true;
-      else if (ch === ',') { row.push(cell); cell = ''; }
-      else if (ch === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
-      else if (ch !== '\r') cell += ch;
-    }
-  }
-  row.push(cell); rows.push(row);
-  return rows.filter(r => r.some(c => String(c).trim() !== ''));
-}
-function normHeader(s) { return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
-function rowGetter(headers, row) {
-  const hmap = {};
-  headers.forEach((h,i) => hmap[normHeader(h)] = i);
-  return names => {
-    for (const name of names) {
-      const idx = hmap[normHeader(name)];
-      if (idx !== undefined) return String(row[idx] ?? '').trim();
-    }
-    return '';
-  };
-}
-function parseDateParts(dateStr) {
-  const s = String(dateStr || '').trim();
-  const now = new Date();
-  if (!s) return [now.getFullYear(), now.getMonth(), now.getDate()];
-  let m = s.match(/^(\d{4})[-\/](\d{1,2})(?:[-\/](\d{1,2}))?/);
-  if (m) return [Number(m[1]), Number(m[2])-1, Number(m[3] || 1)];
-  m = s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})/);
-  if (m) return [Number(m[3].length === 2 ? '20'+m[3] : m[3]), Number(m[1])-1, Number(m[2])];
-  const d = new Date(s);
-  if (!Number.isNaN(d.getTime())) return [d.getFullYear(), d.getMonth(), d.getDate()];
-  return [now.getFullYear(), now.getMonth(), now.getDate()];
-}
-function applyTimeParts(d, timeStr) {
-  const s = String(timeStr || '').trim();
-  let h = 0, m = 0;
-  const mt = s.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?/i);
-  if (mt) {
-    h = Number(mt[1]); m = Number(mt[2] || 0);
-    const ap = (mt[3] || '').toUpperCase();
-    if (ap === 'PM' && h < 12) h += 12;
-    if (ap === 'AM' && h === 12) h = 0;
-  }
-  d.setHours(h||0, m||0, 0, 0);
-  return d;
-}
-function makeCsvDate(dateStr, timeStr) {
-  const [y,m,d] = parseDateParts(dateStr);
-  return applyTimeParts(new Date(y,m,d), timeStr);
-}
-function csvSessionDuplicate(candidate) {
-  const key = s => [s.bookTitle || '', new Date(s.start).toISOString(), Math.round(s.secs||0), sessionPages(s)].join('|').toLowerCase();
-  const ck = key(candidate);
-  return A.sessions.some(s => key(s) === ck);
-}
-async function importCsvSessions(file) {
-  try {
-    const rows = parseCsvText(await file.text());
-    if (rows.length < 2) { toast('CSV has no session rows'); return; }
-    const headers = rows[0];
-    let added = 0, skipped = 0;
-    for (const row of rows.slice(1)) {
-      const get = rowGetter(headers, row);
-      const title = get(['Title','Book','Book Title']) || 'CSV Import';
-      const dateStr = get(['Date','Session Date','Day']) || get(['Month']);
-      const startTime = get(['Start Time','Start']);
-      const endTime = get(['End Time','End']);
-      let mins = Math.round(parseNumberLoose(get(['Session Minutes','Minutes','Mins'])));
-      const pages = Math.max(0, Math.round(parseNumberLoose(get(['Session Pages','Pages','Pages Read']))));
-      const pctRaw = parseNumberLoose(get(['Percentage','Percent','Progress']));
-      const start = makeCsvDate(dateStr, startTime || '00:00');
-      let end = endTime ? makeCsvDate(dateStr, endTime) : null;
-      if (end && end < start) end = new Date(end.getTime() + 86400000);
-      if ((!mins || mins < 1) && end) mins = Math.round((end - start)/60000);
-      if (!mins || mins < 1) { skipped++; continue; }
-      if (!end) end = new Date(start.getTime() + mins*60000);
-      const bk = A.books.find(b => String(b.title||'').trim().toLowerCase() === String(title).trim().toLowerCase());
-      const total = bk ? bookPageCount(bk.id) : 0;
-      const p1 = total && pctRaw ? Math.min(1, pctRaw > 1 ? pctRaw/100 : pctRaw) : 0;
-      const p0 = total && pages ? Math.max(0, p1 - (pages/total)) : 0;
-      const candidate = {
-        id: uid(), manual: true, source: 'csv',
-        bookId: bk?.id || null, bookTitle: title,
-        start: start.toISOString(), end: end.toISOString(),
-        secs: Math.min(720, mins) * 60,
-        p0, p1, pagesRead: pages,
-      };
-      if (csvSessionDuplicate(candidate)) { skipped++; continue; }
-      A.sessions.push(candidate); added++;
-    }
-    await persist();
-    renderJournal(); renderStats(); renderLib();
-    toast(`CSV import complete · ${added} added${skipped ? ` · ${skipped} skipped` : ''}`);
-  } catch(e) {
-    console.error('CSV import failed:', e);
-    toast('CSV import failed');
-  }
 }
 
 
@@ -2603,9 +2318,9 @@ async function importCsvSessions(file) {
 function backupPayload() {
   normalizeBookOrder();
   return {
-    app: 'BookMark', schema: 3, previousApp: 'Folio', version: FOLIO_VERSION,
+    app: 'Folio', schema: 2, version: FOLIO_VERSION,
     exportedAt: new Date().toISOString(),
-    note: 'This backup includes BookMark reading data and library metadata. EPUB files themselves are not embedded.',
+    note: 'This backup includes Folio reading data and library metadata. EPUB files themselves are not embedded.',
     books: A.books, sessions: A.sessions, progress: A.progress,
     bookmarks: A.bookmarks, goal: A.goal, readerSettings: A.readerSettings,
     savedFolderName: A.savedFolderName || ''
@@ -2616,10 +2331,10 @@ async function exportBackup() {
   try {
     const payload = backupPayload();
     const json = JSON.stringify(payload, null, 2);
-    const name = `bookmark-backup-${dayKey(new Date())}.json`;
+    const name = `folio-backup-${dayKey(new Date())}.json`;
     const file = new File([json], name, { type: 'application/json' });
     if (navigator.canShare && navigator.canShare({ files:[file] })) {
-      await navigator.share({ files:[file], title:'BookMark Backup' });
+      await navigator.share({ files:[file], title:'Folio Backup' });
       toast('Backup exported');
       return;
     }
@@ -2638,8 +2353,8 @@ async function restoreBackup(file) {
   try {
     const text = await file.text();
     const data = JSON.parse(text);
-    if (!data || !['BookMark','Folio'].includes(data.app)) throw new Error('Not a BookMark backup');
-    const msg = 'Restore this BookMark backup? This replaces library metadata, stats, journal, progress, bookmarks, and settings. EPUB files are not included in backups.';
+    if (!data || data.app !== 'Folio') throw new Error('Not a Folio backup');
+    const msg = 'Restore this Folio backup? This replaces library metadata, stats, journal, progress, bookmarks, and settings. EPUB files are not included in backups.';
     if (!confirm(msg)) return;
     A.books = Array.isArray(data.books) ? data.books : [];
     A.sessions = Array.isArray(data.sessions) ? data.sessions : [];
@@ -2654,7 +2369,7 @@ async function restoreBackup(file) {
     toast('Backup restored');
   } catch(e) {
     console.error('Restore failed:', e);
-    toast('Restore failed — invalid BookMark backup');
+    toast('Restore failed — invalid Folio backup');
   }
 }
 
@@ -2684,12 +2399,11 @@ function themeDef() {
 
 function applyReaderSettings() {
   const s = A.readerSettings;
-  s.flow = 'paginated';
   const r = document.getElementById('reader');
   if (r) {
     THEMES.forEach(t => r.classList.remove('t-'+t.id));
     r.classList.add('t-'+themeDef().id);
-    r.classList.remove('flow-scroll');
+    r.classList.toggle('flow-scroll', s.flow !== 'paginated');
   }
   // Brightness dimmer
   const bo = document.getElementById('brightOverlay');
@@ -2712,7 +2426,6 @@ function applyEpubTheme() {
     'background': t.bg + ' !important',
     'color': t.fg + ' !important',
     'line-height': `${s.lineHeight} !important`,
-    'overflow': 'hidden !important',
   };
   const para = { 'line-height': `${s.lineHeight} !important` };
   if (s.bold)   { body['font-weight'] = '600 !important'; para['font-weight'] = '600 !important'; }
@@ -2736,8 +2449,6 @@ function applyEpubTheme() {
         doc.documentElement.style.background = t.bg;
         doc.body.style.background = t.bg;
         doc.body.style.color = t.fg;
-        doc.documentElement.style.overflow = 'hidden';
-        doc.body.style.overflow = 'hidden';
       } catch(_) {}
     });
   } catch(_) {}
@@ -2761,37 +2472,10 @@ function syncSettingsUI() {
   document.getElementById('boldSwitch')?.classList.toggle('on', !!s.bold);
   document.getElementById('justifySwitch')?.classList.toggle('on', !!s.justify);
   document.getElementById('swipeSwitch')?.classList.toggle('on', !!s.swipe);
-  document.getElementById('wakeSwitch')?.classList.toggle('on', !!s.keepAwake);
   const br = document.getElementById('brightSlider');
   if (br && Number(br.value) !== (s.brightness||100)) br.value = s.brightness||100;
   document.getElementById('animSeg').style.opacity = s.flow==='paginated' ? '1':'0.4';
   document.getElementById('animSeg').style.pointerEvents = s.flow==='paginated' ? 'auto':'none';
-}
-
-async function requestWakeLock(showToast = false) {
-  const reader = document.getElementById('reader');
-  if (!A.readerSettings.keepAwake || !reader?.classList.contains('active')) return;
-  if (!('wakeLock' in navigator)) {
-    if (showToast || !A.wakeLockWarned) toast('Keep Screen Awake is not available on this device/browser.');
-    A.wakeLockWarned = true;
-    return;
-  }
-  try {
-    if (A.wakeLock && !A.wakeLock.released) return;
-    A.wakeLock = await navigator.wakeLock.request('screen');
-    A.wakeLock.addEventListener('release', () => { A.wakeLock = null; });
-    A.wakeLockWarned = false;
-  } catch(e) {
-    console.warn('Wake lock failed:', e);
-    if (showToast || !A.wakeLockWarned) toast('Keep Screen Awake could not be enabled.');
-    A.wakeLockWarned = true;
-  }
-}
-
-async function releaseWakeLock() {
-  if (!A.wakeLock) return;
-  try { await A.wakeLock.release(); } catch(_) {}
-  A.wakeLock = null;
 }
 
 /* ── Pagination: fixed virtual pages, Apple-Books density ──────── */
@@ -3001,234 +2685,6 @@ function renderBookmarks() {
 /* ── Page turning with animation ───────────────────────────────── */
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
-/* ── Page-curl support ─────────────────────────────────────────── */
-function readBg() {
-  try {
-    const c = getComputedStyle(document.getElementById('reader'))
-      .getPropertyValue('--read-bg').trim();
-    if (c) return c;
-  } catch(_) {}
-  return A.curlBg || '#FBF8F2';
-}
-
-/* Snapshot the currently-rendered page to a bitmap during idle time,
-   so a curl turn can start instantly (no capture lag on tap). */
-function scheduleSnapshot() {
-  if (A.readerSettings.pageAnim !== 'curl') return;
-  clearTimeout(A.snapTmr);
-  A.snapTmr = setTimeout(() => { snapshotPage(); }, 180);
-}
-
-async function snapshotPage() {
-  if (A.readerSettings.pageAnim !== 'curl') return;
-  if (!window.html2canvas || A.turningPage) return;
-  const rbody = document.querySelector('#reader .rbody');
-  const iframe = rbody && rbody.querySelector('#viewer iframe');
-  if (!rbody || !iframe || !iframe.contentDocument) return;
-  A.curlBg = readBg();
-  const w = rbody.clientWidth, h = rbody.clientHeight;
-  if (!w || !h) return;
-  try {
-    // Capture the whole page region (text + page-number strip), clipped to
-    // rbody, skipping chrome and the brightness overlay (the live overlay
-    // dims the composite afterward, so the snapshot must stay undimmed).
-    const cnv = await html2canvas(rbody, {
-      backgroundColor: A.curlBg,
-      scale: Math.min(2, window.devicePixelRatio || 1),
-      logging: false, useCORS: true, removeContainer: true,
-      width: w, height: h, windowWidth: w, windowHeight: h,
-      ignoreElements: el => {
-        const id = el.id || '';
-        if (id === 'brightOverlay' || id === 'curlCanvas' || id === 'rload') return true;
-        const c = el.classList;
-        return c && (c.contains('tzone') || c.contains('menu-fab') ||
-          c.contains('reader-menu') || c.contains('reader-status-top'));
-      },
-    });
-    if (cnv && cnv.width) A.pageSnap = cnv;
-  } catch(_) { /* keep any previous snapshot */ }
-}
-
-/* ── Vertical cylinder page curl ───────────────────────────────────
-   Renders the page rolling around a vertical cylinder: front text on the
-   near face, faint back-of-page text where it rolls over, next page
-   revealed beneath. p is progress 0→1; dir 'next' peels the right edge,
-   'prev' mirrors it. Coordinates are CSS px; ctx is scaled by dpr. */
-function drawCurlFrame(ctx, dpr, snap, W, H, p, dir, paperBg) {
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, W, H);
-  const mir = dir === 'prev';
-  if (mir) { ctx.translate(W, 0); ctx.scale(-1, 1); }   // work in "next" space
-
-  const sw = snap.width, sh = snap.height;
-  const R = Math.max(24, W * 0.13);          // curl radius
-  const S = W + Math.PI * R;                 // full sweep distance
-  const xt = W - p * S;                      // tangent line (where page lifts)
-  const step = 2.5;
-
-  // 1) Flat front still lying down: [0 .. xt]
-  if (xt > 0.5) {
-    const fw = Math.min(W, xt);
-    ctx.globalAlpha = 1;
-    ctx.drawImage(snap, 0, 0, sw * (fw / W), sh, 0, 0, fw, H);
-  }
-
-  // 2) Shadow cast on the revealed next page, just left of the curl base.
-  if (xt > -R * 2 && xt < W) {
-    const x0 = Math.max(0, xt);
-    const g = ctx.createLinearGradient(x0, 0, x0 + 26, 0);
-    g.addColorStop(0, 'rgba(0,0,0,0.20)');
-    g.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.globalAlpha = 1; ctx.fillStyle = g;
-    ctx.fillRect(x0, 0, 26, H);
-  }
-
-  // 3) The curled cylinder: source columns [max(0,xt) .. W], drawn far→near.
-  const cols = [];
-  for (let x = Math.max(0, xt); x <= W; x += step) {
-    const th = (x - xt) / R;
-    if (th > Math.PI) continue;              // rolled fully under, hidden
-    cols.push([x, th]);
-  }
-  cols.sort((a, b) => b[1] - a[1]);
-  for (let i = 0; i < cols.length; i++) {
-    const x = cols[i][0], th = cols[i][1];
-    const destX = xt + R * Math.sin(th);     // bulges right of the tangent
-    const fw = Math.max(0.6, step * Math.abs(Math.cos(th)) + 0.4);
-    const sx = (x / W) * sw, swid = (step / W) * sw;
-    if (th <= Math.PI / 2) {
-      // front face of the lifting page
-      ctx.globalAlpha = 1;
-      ctx.drawImage(snap, sx, 0, swid, sh, destX, 0, fw, H);
-      const d = (th / (Math.PI / 2)) * 0.32;            // darken toward the top
-      ctx.fillStyle = `rgba(0,0,0,${d.toFixed(3)})`;
-      ctx.fillRect(destX, 0, fw + 0.5, H);
-      if (th > Math.PI / 2 - 0.14) {                    // rim highlight at the top
-        ctx.fillStyle = 'rgba(255,255,255,0.16)';
-        ctx.fillRect(destX, 0, fw + 0.5, H);
-      }
-    } else {
-      // back face (rolled over): paper + faint show-through of the same text
-      ctx.globalAlpha = 1; ctx.fillStyle = paperBg;
-      ctx.fillRect(destX, 0, fw + 0.5, H);
-      ctx.globalAlpha = 0.50;
-      ctx.drawImage(snap, sx, 0, swid, sh, destX, 0, fw, H);
-      ctx.globalAlpha = 1;
-      const d = 0.16 + ((th - Math.PI / 2) / (Math.PI / 2)) * 0.16;
-      ctx.fillStyle = `rgba(0,0,0,${d.toFixed(3)})`;
-      ctx.fillRect(destX, 0, fw + 0.5, H);
-    }
-  }
-  ctx.globalAlpha = 1;
-}
-
-/* ── Canvas helpers ────────────────────────────────────────────── */
-function setupCurlCanvas() {
-  const snap = A.pageSnap;
-  const cnv = document.getElementById('curlCanvas');
-  const rbody = document.querySelector('#reader .rbody');
-  if (!snap || !cnv || !rbody) return null;
-  const W = rbody.clientWidth, H = rbody.clientHeight;
-  if (!W || !H) return null;
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
-  cnv.width = W * dpr; cnv.height = H * dpr;
-  cnv.style.height = H + 'px';
-  const ctx = cnv.getContext('2d');
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  return { ctx, W, H, snap, cnv, dpr };
-}
-function teardownCurlCanvas(cnv, ctx) {
-  cnv.classList.remove('on');
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, cnv.width, cnv.height);
-}
-
-/* ── Timed (flick / tap) curl ──────────────────────────────────── */
-async function curlPageTurn(dir) {
-  const c = setupCurlCanvas();
-  if (!c) return false;                      // no snapshot → fall back to slide
-  const { ctx, W, H, snap, cnv, dpr } = c;
-  const bg = A.curlBg || readBg();
-
-  drawCurlFrame(ctx, dpr, snap, W, H, 0, dir, bg);    // full cover
-  cnv.classList.add('on');
-  await new Promise(r => requestAnimationFrame(r));
-
-  try { await (dir === 'next' ? A.rend.next() : A.rend.prev()); } catch(_) {}
-
-  const DUR = 500;
-  await new Promise(resolve => {
-    const t0 = performance.now();
-    (function frame(now) {
-      let p = (now - t0) / DUR;
-      if (p >= 1) p = 1;
-      drawCurlFrame(ctx, dpr, snap, W, H, 1 - Math.pow(1 - p, 2), dir, bg);
-      if (p < 1) requestAnimationFrame(frame); else resolve();
-    })(performance.now());
-  });
-
-  teardownCurlCanvas(cnv, ctx);
-  A.pageSnap = null;
-  scheduleSnapshot();
-  return true;
-}
-
-/* ── Interactive swipe-and-hold curl ───────────────────────────── */
-const D = {
-  active:false, dir:null, swapped:false, swapping:false,
-  ctx:null, cnv:null, W:0, H:0, snap:null, dpr:1, bg:'#FBF8F2',
-  startX:0, startY:0, p:0,
-  primed:false, lastX:0, lastT:0, vel:0, t0:0,
-};
-function dragP(fx) {
-  // progress from how far the finger has travelled inward from the start
-  const span = Math.max(120, D.W * 0.78);
-  const dx = D.dir === 'next' ? (D.startX - fx) : (fx - D.startX);
-  return Math.min(1, Math.max(0, dx / span));
-}
-async function beginDrag(dir, startX) {
-  const c = setupCurlCanvas();
-  if (!c) return false;
-  D.ctx = c.ctx; D.cnv = c.cnv; D.W = c.W; D.H = c.H; D.snap = c.snap; D.dpr = c.dpr;
-  D.bg = A.curlBg || readBg();
-  D.dir = dir; D.startX = startX; D.active = true; D.swapped = false; D.swapping = true;
-  A.turningPage = true;
-  drawCurlFrame(D.ctx, D.dpr, D.snap, D.W, D.H, 0, dir, D.bg);   // full cover
-  D.cnv.classList.add('on');
-  try { await (dir === 'next' ? A.rend.next() : A.rend.prev()); } catch(_) {}
-  D.swapped = true; D.swapping = false;
-  return true;
-}
-function moveDrag(fx) {
-  if (!D.ctx) return;
-  D.p = D.swapping ? 0 : dragP(fx);
-  drawCurlFrame(D.ctx, D.dpr, D.snap, D.W, D.H, D.p, D.dir, D.bg);
-}
-function endDrag(complete) {
-  const ctx = D.ctx, cnv = D.cnv, W = D.W, H = D.H, snap = D.snap, dpr = D.dpr,
-        dir = D.dir, bg = D.bg, wasSwapped = D.swapped, from = D.p;
-  const to = complete ? 1 : 0;
-  const DUR = complete ? 230 : 170;
-  const t0 = performance.now();
-  D.active = false;
-  (function frame(now) {
-    let t = (now - t0) / DUR;
-    if (t >= 1) t = 1;
-    const e = from + (to - from) * (1 - Math.pow(1 - t, 2));
-    drawCurlFrame(ctx, dpr, snap, W, H, e, dir, bg);
-    if (t < 1) { requestAnimationFrame(frame); return; }
-    if (!complete && wasSwapped) {
-      try { (dir === 'next' ? A.rend.prev() : A.rend.next()); } catch(_) {}
-    }
-    teardownCurlCanvas(cnv, ctx);
-    A.pageSnap = null;
-    A.turningPage = false;
-    A.lastDragEnd = performance.now();
-    D.ctx = D.cnv = D.snap = null;
-    scheduleSnapshot();
-  })(performance.now());
-}
-
 async function stablePageTurn(dir) {
   if (!A.rend || A.turningPage) return;
   const s = A.readerSettings;
@@ -3243,21 +2699,6 @@ async function stablePageTurn(dir) {
   try {
     if (!w || anim === 'none' || reduce) {
       await (dir === 'next' ? A.rend.next() : A.rend.prev());
-    } else if (anim === 'curl') {
-      const ok = await curlPageTurn(dir);
-      if (!ok) {                                  // no snapshot yet → slide
-        const out = dir === 'next' ? -22 : 22;
-        const inFrom = dir === 'next' ? 26 : -26;
-        w.classList.add('anim');
-        w.style.transform = `translateX(${out}px)`; w.style.opacity = '0.55';
-        await wait(150);
-        await (dir === 'next' ? A.rend.next() : A.rend.prev());
-        w.classList.remove('anim'); w.style.transition = 'none';
-        w.style.transform = `translateX(${inFrom}px)`; void w.offsetWidth;
-        w.style.transition = ''; w.classList.add('anim-in');
-        w.style.transform = 'translateX(0)'; w.style.opacity = '1';
-        await wait(210);
-      }
     } else if (anim === 'fade') {
       w.classList.add('anim');
       w.style.opacity = '0.25';
@@ -3321,71 +2762,25 @@ function wireReaderControlsOnce() {
   $('rback').addEventListener('click', () => closeReader(true));
   $('bmBtn').addEventListener('click', toggleBookmark);
 
-  /* Tap zones: left = back, middle = chrome, right = forward.
-     Suppress the synthetic click that follows a drag/flick. */
-  const tapGuard = fn => () => {
-    if (A.lastDragEnd && performance.now() - A.lastDragEnd < 400) return;
-    fn();
-  };
-  $('tprev').addEventListener('click', tapGuard(() => stablePageTurn('prev')));
-  $('tnext').addEventListener('click', tapGuard(() => stablePageTurn('next')));
+  /* Tap zones: left = back, middle = chrome, right = forward */
+  $('tprev').addEventListener('click', () => stablePageTurn('prev'));
+  $('tnext').addEventListener('click', () => stablePageTurn('next'));
   $('tmenu').addEventListener('click', toggleChrome);
 
-  /* Touch: interactive page-curl drag (curl mode) or flick-to-turn. */
+  /* Swipe to turn (paginated mode, when enabled) */
   const rbody = document.querySelector('#reader .rbody');
-  const canTurn = () =>
-    A.rend && A.readerSettings.flow === 'paginated' &&
-    document.getElementById('reader')?.classList.contains('active') &&
-    !document.querySelector('#reader .sheet-backdrop.on');
-
   rbody.addEventListener('touchstart', e => {
-    if (!A.readerSettings.swipe || !canTurn() || A.turningPage) return;
+    if (!A.readerSettings.swipe || A.readerSettings.flow !== 'paginated') return;
     if (e.touches.length !== 1) return;
-    A.swipeX = e.touches[0].clientX; A.swipeY = e.touches[0].clientY;
-    A.didSwipe = false;
-    // Prime an interactive curl only if a snapshot is ready.
-    D.primed = (A.readerSettings.pageAnim === 'curl' && !!A.pageSnap);
-    D.startX = A.swipeX; D.startY = A.swipeY;
-    D.lastX = A.swipeX; D.lastT = performance.now(); D.vel = 0;
+    A.swipeX = e.touches[0].clientX; A.swipeY = e.touches[0].clientY; A.didSwipe = false;
   }, {passive:true});
-
-  rbody.addEventListener('touchmove', e => {
-    if (!canTurn()) return;
-    if (e.touches && e.touches.length === 1) e.preventDefault();
-    if (!A.readerSettings.swipe || e.touches.length !== 1) return;
-    const x = e.touches[0].clientX, y = e.touches[0].clientY;
-    const dx = x - D.startX, dy = y - D.startY;
-
-    // Track velocity for flick detection.
-    const now = performance.now();
-    if (now > D.lastT) { D.vel = (x - D.lastX) / (now - D.lastT); D.lastX = x; D.lastT = now; }
-
-    if (D.active) { moveDrag(x, y); return; }
-
-    // Start an interactive curl once the gesture is clearly horizontal.
-    if (D.primed && !D.swapping && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy) * 1.2) {
-      D.primed = false;
-      const dir = dx < 0 ? 'next' : 'prev';
-      beginDrag(dir, D.startX, D.startY).then(ok => { if (ok) moveDrag(x, y); });
-    }
-  }, {passive:false});
-
   rbody.addEventListener('touchend', e => {
-    if (D.active) {
-      const flick = (D.dir === 'next' && D.vel < -0.35) ||
-                    (D.dir === 'prev' && D.vel > 0.35);
-      endDrag(D.p >= 0.42 || flick);
-      A.didSwipe = true; A.lastDragEnd = performance.now();
-      return;
-    }
-    if (D.primed && D.swapping) { return; }     // swap in flight; ignore
-    D.primed = false;
-    // Flick-to-turn for non-curl modes (or curl with no snapshot yet).
-    if (!A.readerSettings.swipe || !canTurn() || !e.changedTouches.length) return;
+    if (!A.readerSettings.swipe || A.readerSettings.flow !== 'paginated') return;
+    if (A.didSwipe || !e.changedTouches.length) return;
     const dx = e.changedTouches[0].clientX - A.swipeX;
     const dy = e.changedTouches[0].clientY - A.swipeY;
-    if (Math.abs(dx) > 52 && Math.abs(dx) > Math.abs(dy) * 1.4) {
-      A.didSwipe = true; A.lastDragEnd = performance.now();
+    if (Math.abs(dx) > 52 && Math.abs(dx) > Math.abs(dy)*1.4) {
+      A.didSwipe = true;
       stablePageTurn(dx < 0 ? 'next' : 'prev');
     }
   }, {passive:true});
@@ -3450,15 +2845,11 @@ function wireReaderControlsOnce() {
   /* Switches */
   const wireSwitch = (id, key, after) => $(id).addEventListener('click', async () => {
     A.readerSettings[key] = !A.readerSettings[key];
-    applyReaderSettings(); await persist(); if (after) await after();
+    applyReaderSettings(); await persist(); if (after) after();
   });
   wireSwitch('boldSwitch', 'bold');
   wireSwitch('justifySwitch', 'justify');
   wireSwitch('swipeSwitch', 'swipe');
-  wireSwitch('wakeSwitch', 'keepAwake', async () => {
-    if (A.readerSettings.keepAwake) await requestWakeLock(true);
-    else await releaseWakeLock();
-  });
 
   /* Segmented controls */
   $('lineSeg').querySelectorAll('button').forEach(b =>
@@ -3476,12 +2867,13 @@ function wireReaderControlsOnce() {
     b.addEventListener('click', async () => {
       A.readerSettings.pageAnim = b.dataset.anim;
       applyReaderSettings(); await persist();
-      if (b.dataset.anim === 'curl') { A.pageSnap = null; scheduleSnapshot(); }
     }));
   $('flowSeg').querySelectorAll('button').forEach(b =>
     b.addEventListener('click', async () => {
-      A.readerSettings.flow = 'paginated';
+      if (A.readerSettings.flow === b.dataset.flow) return;
+      A.readerSettings.flow = b.dataset.flow;
       applyReaderSettings(); await persist();
+      await remountRendition();
     }));
 
   /* Brightness */
@@ -3517,7 +2909,6 @@ async function openReader(bookId) {
   document.getElementById('bnav').style.display = 'none';
   wireReaderControlsOnce();
   applyReaderSettings();
-  requestWakeLock();
 
   const stored = await getEpub(bookId);
   if (!stored) {
@@ -3544,7 +2935,6 @@ function attachRendition(rend, bookId) {
     A.progress[bookId].pct = A.currentPct;
     A.progress[bookId].lastRead = Date.now();
     persist();
-    scheduleSnapshot();
     /* End-of-book: offer to mark finished, once per open */
     const bk = A.books.find(b => b.id === bookId);
     const atEnd = loc?.atEnd || (A.currentPct >= 0.995);
@@ -3565,8 +2955,10 @@ function attachRendition(rend, bookId) {
 }
 
 function renditionOpts() {
-  A.readerSettings.flow = 'paginated';
-  return { width:'100%', height:'100%', spread:'none', flow:'paginated', manager:'default' };
+  const flow = A.readerSettings.flow === 'paginated' ? 'paginated' : 'scrolled-doc';
+  return flow === 'paginated'
+    ? { width:'100%', height:'100%', spread:'none', flow:'paginated', manager:'default' }
+    : { width:'100%', height:'100%', spread:'none', flow:'scrolled-doc', manager:'continuous' };
 }
 
 async function mountEpub(buf, bkMeta) {
@@ -3591,7 +2983,6 @@ async function mountEpub(buf, bkMeta) {
     applyEpubTheme();
     document.getElementById('rload').style.display = 'none';
     showChrome(true);
-    scheduleSnapshot();
 
     /* Fixed pagination (cached after first generate) — runs in background */
     setupLocations(epubBk, bkMeta.id);
@@ -3637,7 +3028,6 @@ function teardown() {
 }
 
 function closeReader(save = true) {
-  releaseWakeLock();
   if (save) stopTimer();
   else if (A.timerInt) { clearInterval(A.timerInt); A.timerInt = null; }
   teardown();
@@ -3671,15 +3061,11 @@ function stopTimer() {
   if (A.elapsed < 10 || !A.bookId) return;
   const bk = A.books.find(b => b.id === A.bookId);
   const prog = A.progress[A.bookId] || {};
-  const p1 = prog.pct || A.sessP0;
-  const totalPages = bookPageCount(A.bookId);
-  const pagesRead = totalPages ? Math.max(0, Math.round((p1 - A.sessP0) * totalPages)) : 0;
   A.sessions.push({
     id: uid(), bookId: A.bookId, bookTitle: bk?.title || 'Unknown',
     start: new Date(Date.now() - A.elapsed*1000).toISOString(),
     end: new Date().toISOString(),
-    secs: A.elapsed, p0: A.sessP0, p1,
-    pagesRead,
+    secs: A.elapsed, p0: A.sessP0, p1: prog.pct || A.sessP0,
   });
   if (!A.progress[A.bookId]) A.progress[A.bookId] = {};
   A.progress[A.bookId].totalSecs = (A.progress[A.bookId].totalSecs||0) + A.elapsed;
@@ -3689,16 +3075,18 @@ function stopTimer() {
 
 document.addEventListener('visibilitychange', () => {
   if (A.timerInt) A.paused = document.hidden;
-  if (document.hidden) {
-    releaseWakeLock();
-  } else if (document.getElementById('reader')?.classList.contains('active')) {
-    requestWakeLock();
-  }
 });
 
 /* ── Boot ──────────────────────────────────────────────────────── */
+function wireDebugRefresh() {
+  const v = document.getElementById('versionLabel');
+  if (v) v.textContent = FOLIO_VERSION;
+  const r = document.getElementById('refreshBtn');
+  if (r) r.href = './?v=' + Date.now();
+}
 
 (async function init() {
+  wireDebugRefresh();
   await hydrate();
   requestPersistentStorage(false);
   renderLib();
