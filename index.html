@@ -1024,7 +1024,7 @@ body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;p
 </div>
 
 <script>
-const FOLIO_VERSION = 'v34-real-capture';
+const FOLIO_VERSION = 'v33-fold-fixes';
 const CHARS_PER_PAGE = 1800;   // ≈ Apple Books / print pagination density
 
 function dbg(msg) {}
@@ -3013,95 +3013,39 @@ function readBg() {
 
 /* Snapshot the currently-rendered page to a bitmap during idle time,
    so a curl turn can start instantly (no capture lag on tap). */
-function scheduleSnapshot(delay) {
+function scheduleSnapshot() {
   if (A.readerSettings.pageAnim !== 'curl') return;
   clearTimeout(A.snapTmr);
-  A.snapTmr = setTimeout(() => { snapshotPage(); }, delay == null ? 90 : delay);
-}
-
-/* Find how far the visible page is offset inside the epub iframe/container
-   (epub.js paginates a section into columns and shows one via scroll/translate). */
-function getPageOffsetX(viewer, iframe) {
-  const cont = viewer.querySelector('.epub-container');
-  if (cont && cont.scrollLeft) return cont.scrollLeft;
-  let el = iframe;
-  while (el && el !== viewer) {
-    if (el.scrollLeft) return el.scrollLeft;
-    const t = getComputedStyle(el).transform;
-    if (t && t !== 'none') {
-      try { const mm = new DOMMatrixReadOnly(t); if (mm.m41) return -mm.m41; } catch(_) {}
-    }
-    el = el.parentElement;
-  }
-  if (viewer.scrollLeft) return viewer.scrollLeft;
-  return 0;
-}
-
-/* Paint the page-number strip onto the snapshot so it folds with the sheet. */
-function paintStatusStrip(fctx, reader, rbW, rbH, scale) {
-  const sub = (getComputedStyle(reader).getPropertyValue('--read-sub') || '#6B7280').trim();
-  const label = (document.getElementById('psShort') || document.getElementById('pageStatus'));
-  const txt = label ? label.textContent.trim() : '';
-  const cx = rbW / 2, baseY = rbH - 14;
-  // blue progress bar
-  const barW = Math.min(rbW * 0.78, 330), bx = cx - barW / 2, by = rbH - 40;
-  fctx.fillStyle = 'rgba(128,128,128,0.32)';
-  roundRect(fctx, bx, by, barW, 4, 2); fctx.fill();
-  const pct = Math.min(1, Math.max(0, A.currentPct || 0));
-  fctx.fillStyle = '#0A84FF';
-  roundRect(fctx, bx, by, Math.max(4, barW * pct), 4, 2); fctx.fill();
-  // page label
-  if (txt) {
-    fctx.fillStyle = sub;
-    fctx.font = '700 15px -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif';
-    fctx.textAlign = 'center'; fctx.textBaseline = 'alphabetic';
-    fctx.fillText(txt, cx, baseY);
-  }
-}
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
+  A.snapTmr = setTimeout(() => { snapshotPage(); }, 180);
 }
 
 async function snapshotPage() {
   if (A.readerSettings.pageAnim !== 'curl') return;
   if (!window.html2canvas || A.turningPage) return;
-  const reader = document.getElementById('reader');
   const rbody = document.querySelector('#reader .rbody');
-  const viewer = document.getElementById('viewer');
-  const iframe = viewer && viewer.querySelector('iframe');
-  const doc = iframe && iframe.contentDocument;
-  if (!reader || !rbody || !viewer || !doc || !doc.body) return;
+  const iframe = rbody && rbody.querySelector('#viewer iframe');
+  if (!rbody || !iframe || !iframe.contentDocument) return;
   A.curlBg = readBg();
-  const rbW = rbody.clientWidth, rbH = rbody.clientHeight;
-  const pageW = viewer.clientWidth, pageH = viewer.clientHeight;
-  if (!rbW || !rbH || !pageW || !pageH) return;
-  const scale = Math.min(2, window.devicePixelRatio || 1);
+  const w = rbody.clientWidth, h = rbody.clientHeight;
+  if (!w || !h) return;
   try {
-    // Capture the epub page from INSIDE the iframe (html2canvas skips nested
-    // iframes, so targeting rbody loses the text). Crop to the visible column.
-    const offX = getPageOffsetX(viewer, iframe);
-    const pageCnv = await html2canvas(doc.documentElement, {
+    // Capture the whole page region (text + page-number strip), clipped to
+    // rbody, skipping chrome and the brightness overlay (the live overlay
+    // dims the composite afterward, so the snapshot must stay undimmed).
+    const cnv = await html2canvas(rbody, {
       backgroundColor: A.curlBg,
-      scale, logging: false, useCORS: true, removeContainer: true,
-      x: offX, y: 0, width: pageW, height: pageH,
-      windowWidth: Math.max(doc.documentElement.scrollWidth, pageW + offX),
-      windowHeight: Math.max(doc.documentElement.scrollHeight, pageH),
+      scale: Math.min(2, window.devicePixelRatio || 1),
+      logging: false, useCORS: true, removeContainer: true,
+      width: w, height: h, windowWidth: w, windowHeight: h,
+      ignoreElements: el => {
+        const id = el.id || '';
+        if (id === 'brightOverlay' || id === 'curlCanvas' || id === 'rload') return true;
+        const c = el.classList;
+        return c && (c.contains('tzone') || c.contains('menu-fab') ||
+          c.contains('reader-menu') || c.contains('reader-status-top'));
+      },
     });
-    // Composite page + page-number strip onto a full-rbody snapshot.
-    const full = document.createElement('canvas');
-    full.width = rbW * scale; full.height = rbH * scale;
-    const fctx = full.getContext('2d');
-    fctx.scale(scale, scale);
-    fctx.fillStyle = A.curlBg; fctx.fillRect(0, 0, rbW, rbH);
-    fctx.drawImage(pageCnv, 0, 0, pageW, pageH);
-    paintStatusStrip(fctx, reader, rbW, rbH, scale);
-    A.pageSnap = full;
+    if (cnv && cnv.width) A.pageSnap = cnv;
   } catch(_) { /* keep any previous snapshot */ }
 }
 
@@ -3235,7 +3179,6 @@ const D = {
   ctx:null, cnv:null, W:0, H:0, snap:null, dpr:1, bg:'#FBF8F2',
   startX:0, startY:0, p:0,
   primed:false, lastX:0, lastT:0, vel:0, t0:0,
-  pendingDir:null, swapPromise:null,
 };
 function dragP(fx) {
   // progress from how far the finger has travelled inward from the start
@@ -3248,28 +3191,24 @@ async function beginDrag(dir, startX) {
   if (!c) return false;
   D.ctx = c.ctx; D.cnv = c.cnv; D.W = c.W; D.H = c.H; D.snap = c.snap; D.dpr = c.dpr;
   D.bg = A.curlBg || readBg();
-  D.dir = dir; D.startX = startX; D.active = true; D.swapped = false; D.p = 0;
+  D.dir = dir; D.startX = startX; D.active = true; D.swapped = false; D.swapping = true;
   A.turningPage = true;
   drawCurlFrame(D.ctx, D.dpr, D.snap, D.W, D.H, 0, dir, D.bg);   // full cover
   D.cnv.classList.add('on');
-  // Swap the live page underneath WITHOUT blocking the gesture — the finger
-  // tracks immediately; the freshly revealed sliver fills in within a frame.
-  D.swapPromise = Promise.resolve()
-    .then(() => dir === 'next' ? A.rend.next() : A.rend.prev())
-    .then(() => { D.swapped = true; })
-    .catch(() => { D.swapped = true; });
+  try { await (dir === 'next' ? A.rend.next() : A.rend.prev()); } catch(_) {}
+  D.swapped = true; D.swapping = false;
   return true;
 }
 function moveDrag(fx) {
   if (!D.ctx) return;
-  D.p = dragP(fx);
+  D.p = D.swapping ? 0 : dragP(fx);
   drawCurlFrame(D.ctx, D.dpr, D.snap, D.W, D.H, D.p, D.dir, D.bg);
 }
 function endDrag(complete) {
   const ctx = D.ctx, cnv = D.cnv, W = D.W, H = D.H, snap = D.snap, dpr = D.dpr,
-        dir = D.dir, bg = D.bg, from = D.p;
+        dir = D.dir, bg = D.bg, wasSwapped = D.swapped, from = D.p;
   const to = complete ? 1 : 0;
-  const DUR = complete ? 220 : 160;
+  const DUR = complete ? 230 : 170;
   const t0 = performance.now();
   D.active = false;
   (function frame(now) {
@@ -3278,20 +3217,16 @@ function endDrag(complete) {
     const e = from + (to - from) * (1 - Math.pow(1 - t, 2));
     drawCurlFrame(ctx, dpr, snap, W, H, e, dir, bg);
     if (t < 1) { requestAnimationFrame(frame); return; }
-    finalizeDrag(complete, dir, cnv, ctx);
+    if (!complete && wasSwapped) {
+      try { (dir === 'next' ? A.rend.prev() : A.rend.next()); } catch(_) {}
+    }
+    teardownCurlCanvas(cnv, ctx);
+    A.pageSnap = null;
+    A.turningPage = false;
+    A.lastDragEnd = performance.now();
+    D.ctx = D.cnv = D.snap = null;
+    scheduleSnapshot();
   })(performance.now());
-}
-async function finalizeDrag(complete, dir, cnv, ctx) {
-  try { await D.swapPromise; } catch(_) {}    // make sure the swap landed
-  if (!complete && D.swapped) {                // cancelled → restore old page
-    try { (dir === 'next' ? A.rend.prev() : A.rend.next()); } catch(_) {}
-  }
-  teardownCurlCanvas(cnv, ctx);
-  A.pageSnap = null;
-  A.turningPage = false;
-  A.lastDragEnd = performance.now();
-  D.ctx = D.cnv = D.snap = null;
-  scheduleSnapshot();
 }
 
 async function stablePageTurn(dir) {
@@ -3407,10 +3342,9 @@ function wireReaderControlsOnce() {
     if (!A.readerSettings.swipe || !canTurn() || A.turningPage) return;
     if (e.touches.length !== 1) return;
     A.swipeX = e.touches[0].clientX; A.swipeY = e.touches[0].clientY;
-    A.didSwipe = false; D.pendingDir = null;
-    // Prime whenever curl mode is on; hurry a snapshot if we don't have one.
-    D.primed = (A.readerSettings.pageAnim === 'curl');
-    if (D.primed && !A.pageSnap) scheduleSnapshot(0);
+    A.didSwipe = false;
+    // Prime an interactive curl only if a snapshot is ready.
+    D.primed = (A.readerSettings.pageAnim === 'curl' && !!A.pageSnap);
     D.startX = A.swipeX; D.startY = A.swipeY;
     D.lastX = A.swipeX; D.lastT = performance.now(); D.vel = 0;
   }, {passive:true});
@@ -3422,48 +3356,35 @@ function wireReaderControlsOnce() {
     const x = e.touches[0].clientX, y = e.touches[0].clientY;
     const dx = x - D.startX, dy = y - D.startY;
 
+    // Track velocity for flick detection.
     const now = performance.now();
     if (now > D.lastT) { D.vel = (x - D.lastX) / (now - D.lastT); D.lastX = x; D.lastT = now; }
 
-    if (D.active) { moveDrag(x); return; }
+    if (D.active) { moveDrag(x, y); return; }
 
-    // Begin once the gesture is clearly horizontal.
-    if (D.primed && !D.pendingDir && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+    // Start an interactive curl once the gesture is clearly horizontal.
+    if (D.primed && !D.swapping && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy) * 1.2) {
       D.primed = false;
       const dir = dx < 0 ? 'next' : 'prev';
-      if (A.pageSnap) {
-        beginDrag(dir, D.startX).then(ok => { if (ok) moveDrag(x); else D.pendingDir = dir; });
-      } else {
-        // Snapshot not ready: treat as a swipe → quick turn on release.
-        D.pendingDir = dir;
-      }
+      beginDrag(dir, D.startX, D.startY).then(ok => { if (ok) moveDrag(x, y); });
     }
   }, {passive:false});
 
   rbody.addEventListener('touchend', e => {
     if (D.active) {
-      const flick = (D.dir === 'next' && D.vel < -0.3) ||
-                    (D.dir === 'prev' && D.vel > 0.3);
-      endDrag(D.p >= 0.4 || flick);
+      const flick = (D.dir === 'next' && D.vel < -0.35) ||
+                    (D.dir === 'prev' && D.vel > 0.35);
+      endDrag(D.p >= 0.42 || flick);
       A.didSwipe = true; A.lastDragEnd = performance.now();
       return;
     }
-    // Swipe detected but not interactive (no snapshot yet) → quick turn.
-    if (D.pendingDir) {
-      const dir = D.pendingDir; D.pendingDir = null;
-      const dx = (e.changedTouches[0]?.clientX ?? D.startX) - D.startX;
-      const moved = Math.abs(dx) > 28 ||
-        (dir === 'next' ? D.vel < -0.3 : D.vel > 0.3);
-      A.didSwipe = true; A.lastDragEnd = performance.now();
-      if (moved) stablePageTurn(dir);
-      return;
-    }
+    if (D.primed && D.swapping) { return; }     // swap in flight; ignore
     D.primed = false;
-    // Generic flick fallback (non-curl modes).
+    // Flick-to-turn for non-curl modes (or curl with no snapshot yet).
     if (!A.readerSettings.swipe || !canTurn() || !e.changedTouches.length) return;
     const dx = e.changedTouches[0].clientX - A.swipeX;
     const dy = e.changedTouches[0].clientY - A.swipeY;
-    if (Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+    if (Math.abs(dx) > 52 && Math.abs(dx) > Math.abs(dy) * 1.4) {
       A.didSwipe = true; A.lastDragEnd = performance.now();
       stablePageTurn(dx < 0 ? 'next' : 'prev');
     }
