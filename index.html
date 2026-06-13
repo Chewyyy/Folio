@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Folio">
+<meta name="apple-mobile-web-app-title" content="BookMark">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#F6F3ED" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#101216" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
-<title>Folio</title>
+<title>BookMark</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -259,6 +259,9 @@ html,body{height:100%;height:100dvh;background:#C8C3BC;
 .sdur{font-size:15px;font-weight:800;color:var(--accent);flex-shrink:0}
 .sdel{background:none;border:none;color:var(--sub);font-size:15px;cursor:pointer;
   padding:4px 2px;flex-shrink:0;opacity:.55}
+.show-more-sessions{width:100%;border:0;border-radius:var(--rsm);background:rgba(45,106,79,.10);
+  color:var(--accent);font-size:14px;font-weight:800;padding:13px 14px;margin-top:8px;cursor:pointer}
+.show-more-sessions:active{transform:scale(.98)}
 .nodata{text-align:center;color:var(--sub);font-size:14px;padding:32px;line-height:1.65}
 
 .year-books-card{background:var(--card);border-radius:var(--r);padding:18px 12px 20px;
@@ -589,7 +592,7 @@ body.reader-open{background:var(--read-bg)!important}
 <body>
 <input type="file" id="fi" multiple>
 <input type="file" id="folderFi" multiple webkitdirectory directory>
-<input type="file" id="backupFi" accept=".json,.folio-backup.json,application/json">
+<input type="file" id="backupFi" accept=".json,.bookmark-backup.json,.folio-backup.json,application/json">
 <input type="file" id="csvFi" accept=".csv,text/csv,text/plain">
 <div id="app">
 
@@ -597,7 +600,7 @@ body.reader-open{background:var(--read-bg)!important}
   <div class="screen active" id="lib">
     <div class="hdr">
       <div class="hdr-left">
-        <h1>Folio</h1>
+        <h1>BookMark</h1>
       </div>
       <div class="hdr-actions">
         <button class="home-goal-btn" id="homeGoalBtn" type="button" title="Today's reading goal">
@@ -1012,7 +1015,7 @@ body.reader-open{background:var(--read-bg)!important}
 </div>
 
 <script>
-const FOLIO_VERSION = 'v26-manual-csv-pace';
+const FOLIO_VERSION = 'v27-bookmark-sessions';
 const CHARS_PER_PAGE = 1800;   // ≈ Apple Books / print pagination density
 
 function dbg(msg) {}
@@ -1101,6 +1104,7 @@ const A = {
   reorderMode: false, draggingBookEl: null, dragPlaceholder: null, savedFolderName: '',
   selectedBookIds: new Set(), selectionMode: false, dragMoved: false,
   dragAutoScrollFrame: null, dragAutoScrollY: 0,
+  sessionsVisible: 10,
 };
 
 const STATE_KEYS = ['f_books','f_sessions','f_progress','f_reader_settings','f_goal','f_bookmarks','f_saved_folder_name'];
@@ -2317,6 +2321,7 @@ function renderStats() {
   document.getElementById('spavg').textContent  = nfmt(Math.round(avgPages));
   document.getElementById('spweek').textContent = nfmt(weekPages);
   document.getElementById('spaceavg').textContent = avgPace ? avgPace.toFixed(2) : '0.00';
+  A.sessionsVisible = Math.max(10, A.sessionsVisible || 10);
   renderChart(); renderPaceChart(); renderBooksReadThisYear(); renderSessions(); updateStorageStatus();
 }
 
@@ -2421,34 +2426,48 @@ function renderBooksReadThisYear() {
 }
 
 function renderSessions() {
-  const list   = document.getElementById('slist');
-  const recent = [...A.sessions]
-    .sort((a,b)=>new Date(b.start)-new Date(a.start)).slice(0,25);
-  if (!recent.length) {
+  const list = document.getElementById('slist');
+  const all = [...A.sessions]
+    .sort((a,b)=>new Date(b.start)-new Date(a.start));
+  if (!all.length) {
+    A.sessionsVisible = 10;
     list.innerHTML='<div class="nodata">No sessions yet.<br>Open a book to start reading!</div>';
     return;
   }
-  list.innerHTML = recent.map(s=>{
+  A.sessionsVisible = Math.max(10, A.sessionsVisible || 10);
+  const shown = all.slice(0, A.sessionsVisible);
+  const rows = shown.map(s=>{
     const delta = Math.round(((s.p1||0)-(s.p0||0))*100);
     const pages = sessionPages(s);
     const pace = pages && sessionMinutes(s) ? ` · ${(pages/sessionMinutes(s)).toFixed(2)} pg/min` : '';
+    const title = s.bookTitle || 'Reading session';
     const extra = `${s.manual ? 'added manually' : (delta>0 ? `+${delta}% progress` : 'session')}${pages ? ` · ${pages} pg${pace}` : ''}`;
     return `<div class="srow">
       <div class="sdot${s.manual?' manual':''}"></div>
       <div class="sinf">
-        <div class="sbook">${esc(s.bookTitle)}</div>
+        <div class="sbook">${esc(title)}</div>
         <div class="smeta">${fmtDate(s.start)} · ${extra}</div>
       </div>
       <div class="sdur">${fmt(s.secs)}</div>
       <button class="sdel" data-sid="${s.id}" title="Delete">✕</button>
     </div>`;
   }).join('');
+  const remaining = all.length - shown.length;
+  const more = remaining > 0
+    ? `<button class="show-more-sessions" id="showMoreSessions" type="button">Show 10 More · ${remaining} remaining</button>`
+    : '';
+  list.innerHTML = rows + more;
   list.querySelectorAll('.sdel').forEach(b => b.addEventListener('click', async () => {
     if (!confirm('Delete this reading session?')) return;
     A.sessions = A.sessions.filter(s=>s.id!==b.dataset.sid);
+    A.sessionsVisible = Math.min(Math.max(10, A.sessionsVisible || 10), Math.max(10, A.sessions.length));
     await persist();
-    renderStats(); renderLib();
+    renderStats(); renderLib(); renderJournal();
   }));
+  document.getElementById('showMoreSessions')?.addEventListener('click', () => {
+    A.sessionsVisible = Math.min(all.length, (A.sessionsVisible || 10) + 10);
+    renderSessions();
+  });
 }
 
 
@@ -2572,9 +2591,9 @@ async function importCsvSessions(file) {
 function backupPayload() {
   normalizeBookOrder();
   return {
-    app: 'Folio', schema: 2, version: FOLIO_VERSION,
+    app: 'BookMark', schema: 3, previousApp: 'Folio', version: FOLIO_VERSION,
     exportedAt: new Date().toISOString(),
-    note: 'This backup includes Folio reading data and library metadata. EPUB files themselves are not embedded.',
+    note: 'This backup includes BookMark reading data and library metadata. EPUB files themselves are not embedded.',
     books: A.books, sessions: A.sessions, progress: A.progress,
     bookmarks: A.bookmarks, goal: A.goal, readerSettings: A.readerSettings,
     savedFolderName: A.savedFolderName || ''
@@ -2585,10 +2604,10 @@ async function exportBackup() {
   try {
     const payload = backupPayload();
     const json = JSON.stringify(payload, null, 2);
-    const name = `folio-backup-${dayKey(new Date())}.json`;
+    const name = `bookmark-backup-${dayKey(new Date())}.json`;
     const file = new File([json], name, { type: 'application/json' });
     if (navigator.canShare && navigator.canShare({ files:[file] })) {
-      await navigator.share({ files:[file], title:'Folio Backup' });
+      await navigator.share({ files:[file], title:'BookMark Backup' });
       toast('Backup exported');
       return;
     }
@@ -2607,8 +2626,8 @@ async function restoreBackup(file) {
   try {
     const text = await file.text();
     const data = JSON.parse(text);
-    if (!data || data.app !== 'Folio') throw new Error('Not a Folio backup');
-    const msg = 'Restore this Folio backup? This replaces library metadata, stats, journal, progress, bookmarks, and settings. EPUB files are not included in backups.';
+    if (!data || !['BookMark','Folio'].includes(data.app)) throw new Error('Not a BookMark backup');
+    const msg = 'Restore this BookMark backup? This replaces library metadata, stats, journal, progress, bookmarks, and settings. EPUB files are not included in backups.';
     if (!confirm(msg)) return;
     A.books = Array.isArray(data.books) ? data.books : [];
     A.sessions = Array.isArray(data.sessions) ? data.sessions : [];
@@ -2623,7 +2642,7 @@ async function restoreBackup(file) {
     toast('Backup restored');
   } catch(e) {
     console.error('Restore failed:', e);
-    toast('Restore failed — invalid Folio backup');
+    toast('Restore failed — invalid BookMark backup');
   }
 }
 
