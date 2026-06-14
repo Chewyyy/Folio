@@ -257,6 +257,9 @@ html,body{height:100%;height:100dvh;background:#C8C3BC;
 .sinf{flex:1;min-width:0}
 .sbook{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .smeta{font-size:11px;color:var(--sub);margin-top:2px}
+.smeta.progress{margin-top:4px;color:var(--accent);font-weight:800}
+.srow,.dsess{cursor:pointer}
+.srow:active,.dsess:active{transform:scale(.992)}
 .sdur{font-size:15px;font-weight:800;color:var(--accent);flex-shrink:0}
 .sdel{background:none;border:none;color:var(--sub);font-size:15px;cursor:pointer;
   padding:4px 2px;flex-shrink:0;opacity:.55}
@@ -979,6 +982,34 @@ body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;p
     </div>
   </div>
 
+  <!-- Session editor -->
+  <div class="app-sheet-backdrop" id="sessionEditSheet">
+    <div class="app-sheet">
+      <div class="grabber"></div>
+      <div class="as-title">Edit Session</div>
+      <div class="as-sub" id="seSub">Update the reading session data.</div>
+      <div class="frm">
+        <label>Book</label>
+        <select id="seBook"></select>
+        <div class="row2">
+          <div><label>Date</label><input type="date" id="seDate"></div>
+          <div><label>Start time</label><input type="time" id="seTime"></div>
+        </div>
+        <div class="row2">
+          <div><label>Minutes</label><input type="number" id="seMins" min="1" max="720" inputmode="numeric"></div>
+          <div><label>Pages</label><input type="number" id="sePages" min="0" max="5000" inputmode="numeric" placeholder="optional"></div>
+        </div>
+        <label>Progress change (%)</label>
+        <input type="number" id="seProgress" step="0.1" inputmode="decimal" placeholder="optional, e.g. 1 or 0.5">
+      </div>
+      <div class="btnrow">
+        <button class="ghost danger" id="seDelete" type="button">Delete</button>
+        <button class="ghost" data-appclose="sessionEditSheet" type="button">Cancel</button>
+        <button class="ctabtn" id="seSave" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Book details -->
   <div class="app-sheet-backdrop" id="detailSheet">
     <div class="app-sheet">
@@ -1018,7 +1049,7 @@ body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;p
 </div>
 
 <script>
-const FOLIO_VERSION = 'v32-bookmark-pace-resume-fix';
+const FOLIO_VERSION = 'v33-session-edit-polish';
 const CHARS_PER_PAGE = 1800;   // ≈ Apple Books / print pagination density
 
 function dbg(msg) {}
@@ -1102,7 +1133,7 @@ const A = {
   chromeHideTmr: null, themeCounter: 0,
   locationsReady: false, scrubbing: false,
   calY: new Date().getFullYear(), calM: new Date().getMonth(),
-  daySheetKey: null, finishBookId: null,
+  daySheetKey: null, finishBookId: null, editSessionId: null,
   longPressTmr: null, longPressed: false,
   reorderMode: false, draggingBookEl: null, dragPlaceholder: null, savedFolderName: '',
   selectedBookIds: new Set(), selectionMode: false, dragMoved: false,
@@ -2190,17 +2221,22 @@ function renderDaySessions() {
     list.innerHTML = `<div class="nodata" style="padding:14px">No reading logged this day.</div>`;
     return;
   }
-  list.innerHTML = todays.map(s => `
-    <div class="dsess">
+  list.innerHTML = todays.map(s => {
+    const meta = sessionMetaParts(s);
+    return `<div class="dsess" data-sid="${s.id}">
       <div class="sdot${s.manual?' manual':''}"></div>
       <div class="sinf">
         <div class="sbook">${esc(s.bookTitle||'Reading session')}</div>
-        <div class="smeta">${new Date(s.start).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}${sessionPages(s) ? ` · ${sessionPages(s)} pg` : ''}${s.manual?' · added manually':''}</div>
+        <div class="smeta">${esc(meta.primary)}</div>
+        ${meta.progress ? `<div class="smeta progress">${esc(meta.progress)}</div>` : ''}
       </div>
       <div class="sdur">${fmt(s.secs)}</div>
       <button class="sdel" data-sid="${s.id}" title="Delete">✕</button>
-    </div>`).join('');
-  list.querySelectorAll('.sdel').forEach(b => b.addEventListener('click', async () => {
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.dsess[data-sid]').forEach(r => r.addEventListener('click', () => openSessionEditor(r.dataset.sid)));
+  list.querySelectorAll('.sdel').forEach(b => b.addEventListener('click', async e => {
+    e.stopPropagation();
     if (!confirm('Delete this reading session?')) return;
     A.sessions = A.sessions.filter(s=>s.id!==b.dataset.sid);
     await persist();
@@ -2304,6 +2340,39 @@ function sessionPages(s) {
 }
 function sessionMinutes(s) {
   return Math.max(0, Number(s?.secs || 0) / 60);
+}
+function fmtSessionDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' • ' +
+    d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+}
+function sessionProgressDeltaPct(s) {
+  if (!s) return null;
+  if (Number.isFinite(Number(s.progressPctDelta))) return Number(s.progressPctDelta);
+  const delta = (Number(s.p1 || 0) - Number(s.p0 || 0)) * 100;
+  return Number.isFinite(delta) && Math.abs(delta) > 0.001 ? delta : null;
+}
+function formatProgressDelta(s) {
+  const delta = sessionProgressDeltaPct(s);
+  if (!Number.isFinite(delta) || Math.abs(delta) < 0.001) return '';
+  const abs = Math.abs(delta);
+  const val = abs < 0.1 ? '<0.1' : (abs < 1 ? (Math.round(abs * 10) / 10).toFixed(1).replace(/\.0$/,'') : String(Math.round(abs)));
+  return `${delta >= 0 ? '+' : '-'}${val}% progress`;
+}
+function sessionMetaParts(s) {
+  const pages = sessionPages(s);
+  const mins = sessionMinutes(s);
+  const parts = [fmtSessionDate(s.start)];
+  if (pages > 0) parts.push(`${nfmt(pages)} pgs`);
+  if (pages > 0 && mins > 0) parts.push(`${(pages / mins).toFixed(2)} pgs/min`);
+  return { primary: parts.join(' • '), progress: formatProgressDelta(s) };
+}
+function sessionTimeInputValue(iso) {
+  return new Date(iso).toTimeString().slice(0,5);
+}
+function progressInputValue(s) {
+  const delta = sessionProgressDeltaPct(s);
+  return Number.isFinite(delta) ? String(Math.round(delta * 10) / 10) : '';
 }
 function sessionsSince(ms) {
   return A.sessions.filter(s => new Date(s.start).getTime() >= ms);
@@ -2445,16 +2514,14 @@ function renderSessions() {
   A.sessionsVisible = Math.max(10, A.sessionsVisible || 10);
   const shown = all.slice(0, A.sessionsVisible);
   const rows = shown.map(s=>{
-    const delta = Math.round(((s.p1||0)-(s.p0||0))*100);
-    const pages = sessionPages(s);
-    const pace = pages && sessionMinutes(s) ? ` · ${(pages/sessionMinutes(s)).toFixed(2)} pg/min` : '';
     const title = s.bookTitle || 'Reading session';
-    const extra = `${s.manual ? 'added manually' : (delta>0 ? `+${delta}% progress` : 'session')}${pages ? ` · ${pages} pg${pace}` : ''}`;
-    return `<div class="srow">
+    const meta = sessionMetaParts(s);
+    return `<div class="srow" data-sid="${s.id}">
       <div class="sdot${s.manual?' manual':''}"></div>
       <div class="sinf">
         <div class="sbook">${esc(title)}</div>
-        <div class="smeta">${fmtDate(s.start)} · ${extra}</div>
+        <div class="smeta">${esc(meta.primary)}</div>
+        ${meta.progress ? `<div class="smeta progress">${esc(meta.progress)}</div>` : ''}
       </div>
       <div class="sdur">${fmt(s.secs)}</div>
       <button class="sdel" data-sid="${s.id}" title="Delete">✕</button>
@@ -2465,7 +2532,9 @@ function renderSessions() {
     ? `<button class="show-more-sessions" id="showMoreSessions" type="button">Show 10 More · ${remaining} remaining</button>`
     : '';
   list.innerHTML = rows + more;
-  list.querySelectorAll('.sdel').forEach(b => b.addEventListener('click', async () => {
+  list.querySelectorAll('.srow[data-sid]').forEach(r => r.addEventListener('click', () => openSessionEditor(r.dataset.sid)));
+  list.querySelectorAll('.sdel').forEach(b => b.addEventListener('click', async e => {
+    e.stopPropagation();
     if (!confirm('Delete this reading session?')) return;
     A.sessions = A.sessions.filter(s=>s.id!==b.dataset.sid);
     A.sessionsVisible = Math.min(Math.max(10, A.sessionsVisible || 10), Math.max(10, A.sessions.length));
@@ -2477,6 +2546,66 @@ function renderSessions() {
     renderSessions();
   });
 }
+
+/* ── Session editor ───────────────────────────────────────────── */
+function sessionById(id) { return A.sessions.find(s => s.id === id); }
+function openSessionEditor(id) {
+  const s = sessionById(id); if (!s) return;
+  A.editSessionId = id;
+  const sel = document.getElementById('seBook');
+  sel.innerHTML = `<option value="">No specific book</option>` +
+    A.books.map(b=>`<option value="${b.id}">${esc(b.title)}</option>`).join('');
+  sel.value = s.bookId || '';
+  const start = new Date(s.start);
+  document.getElementById('seDate').value = dayKey(start);
+  document.getElementById('seTime').value = sessionTimeInputValue(s.start);
+  document.getElementById('seMins').value = String(Math.max(1, Math.round(sessionMinutes(s))));
+  const pages = Number.isFinite(Number(s.pagesRead)) || Number.isFinite(Number(s.pages)) ? sessionPages(s) : '';
+  document.getElementById('sePages').value = pages === '' ? '' : String(pages);
+  document.getElementById('seProgress').value = progressInputValue(s);
+  document.getElementById('seSub').textContent = `${s.bookTitle || 'Reading session'} · ${fmtSessionDate(s.start)}`;
+  openAppSheet('sessionEditSheet');
+}
+async function saveSessionEdit() {
+  const s = sessionById(A.editSessionId); if (!s) return;
+  const date = document.getElementById('seDate').value;
+  const time = document.getElementById('seTime').value || '00:00';
+  const mins = parseInt(document.getElementById('seMins').value, 10);
+  if (!date || !mins || mins < 1) { toast('Enter a date and minutes'); return; }
+  const start = makeCsvDate(date, time);
+  if (start > new Date()) { toast("Can't log reading in the future"); return; }
+  const secs = Math.min(720, mins) * 60;
+  const bookId = document.getElementById('seBook').value || null;
+  const bk = bookId ? A.books.find(b => b.id === bookId) : null;
+  const pagesRaw = document.getElementById('sePages').value.trim();
+  const progressRaw = document.getElementById('seProgress').value.trim();
+  s.bookId = bookId;
+  s.bookTitle = bk?.title || s.bookTitle || 'Manual entry';
+  s.start = start.toISOString();
+  s.end = new Date(start.getTime() + secs * 1000).toISOString();
+  s.secs = secs;
+  s.edited = true;
+  if (pagesRaw === '') delete s.pagesRead;
+  else s.pagesRead = Math.max(0, Math.round(parseNumberLoose(pagesRaw)));
+  if (progressRaw === '') delete s.progressPctDelta;
+  else s.progressPctDelta = parseNumberLoose(progressRaw);
+  await persist();
+  closeAppSheet('sessionEditSheet');
+  renderDaySessions(); renderJournal(); renderStats(); renderLib();
+  toast('Session updated');
+}
+async function deleteEditedSession() {
+  const s = sessionById(A.editSessionId); if (!s) return;
+  if (!confirm('Delete this reading session?')) return;
+  A.sessions = A.sessions.filter(x => x.id !== s.id);
+  await persist();
+  closeAppSheet('sessionEditSheet');
+  renderDaySessions(); renderJournal(); renderStats(); renderLib();
+  toast('Session deleted');
+}
+document.getElementById('seSave')?.addEventListener('click', saveSessionEdit);
+document.getElementById('seDelete')?.addEventListener('click', deleteEditedSession);
+
 
 
 /* ── CSV import / manual session helpers ───────────────────────── */
