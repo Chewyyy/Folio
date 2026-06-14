@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="BookMark">
+<meta name="apple-mobile-web-app-title" content="Folio">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#F6F3ED" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#101216" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
-<title>BookMark</title>
+<title>Folio</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -28,7 +28,6 @@
   --border:   #E4DFD4;
   --rbg:      #FBF8F2;
   --gold:     #C9962E;
-  --imsg:     #007AFF;
   --shadow:   0 2px 12px rgba(0,0,0,0.07);
   --shadowLg: 0 8px 28px rgba(0,0,0,0.13);
   --r:        14px;
@@ -233,10 +232,10 @@ html,body{height:100%;height:100dvh;background:#C8C3BC;
 .bchart{display:flex;align-items:flex-end;gap:6px;height:80px;position:relative}
 .bcol{flex:1;display:flex;flex-direction:column;align-items:center;
   justify-content:flex-end;gap:5px;height:100%}
-.bar{width:100%;background:var(--imsg);border-radius:4px 4px 0 0;min-height:3px;opacity:.72}
+.bar{width:100%;background:var(--accent);border-radius:4px 4px 0 0;min-height:3px;opacity:.65}
 .bar.today{opacity:1}
 .bar.zero{opacity:.18}
-.bar.met{background:var(--imsg);opacity:.95}
+.bar.met{background:var(--gold);opacity:.9}
 .blbl{font-size:9px;color:var(--sub);font-weight:600}
 .pacechart{height:172px;position:relative;overflow:hidden}
 .pace-svg{width:100%;height:154px;display:block;overflow:visible}
@@ -260,9 +259,6 @@ html,body{height:100%;height:100dvh;background:#C8C3BC;
 .sdur{font-size:15px;font-weight:800;color:var(--accent);flex-shrink:0}
 .sdel{background:none;border:none;color:var(--sub);font-size:15px;cursor:pointer;
   padding:4px 2px;flex-shrink:0;opacity:.55}
-.show-more-sessions{width:100%;border:0;border-radius:var(--rsm);background:rgba(45,106,79,.10);
-  color:var(--accent);font-size:14px;font-weight:800;padding:13px 14px;margin-top:8px;cursor:pointer}
-.show-more-sessions:active{transform:scale(.98)}
 .nodata{text-align:center;color:var(--sub);font-size:14px;padding:32px;line-height:1.65}
 
 .year-books-card{background:var(--card);border-radius:var(--r);padding:18px 12px 20px;
@@ -404,9 +400,7 @@ input[type=file]{display:none}
 #reader.t-night{--read-bg:#000000;--read-fg:#D9D9DE;--read-sub:#7E7E88;--read-panel:rgba(32,32,35,.94);--read-sheet:rgba(26,26,28,.98);--read-link:#8FA8D8}
 #reader.t-focus,#reader.t-night{color-scheme:dark}
 #app.reader-open{max-width:none!important;width:100vw!important;box-shadow:none!important;background:var(--read-bg)!important}
-body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;position:fixed;width:100%;height:100%;overscroll-behavior:none}
-#reader,#reader .rbody,#viewerWrap,#viewer{overflow:hidden!important;overscroll-behavior:none;touch-action:none}
-#reader .sheet-backdrop,#reader .sheet,#reader .sheet-body,#reader .sheet-body *{touch-action:auto}
+body.reader-open{background:var(--read-bg)!important}
 .rbody{flex:1;position:relative;overflow:hidden;background:var(--read-bg)!important}
 
 /* viewer + page-turn animation wrapper */
@@ -415,7 +409,7 @@ body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;p
 #viewerWrap.anim{transition:transform .16s ease-out,opacity .16s ease-out}
 #viewerWrap.anim-in{transition:transform .19s cubic-bezier(.22,1,.36,1),opacity .19s ease-out}
 #viewer{position:absolute;inset:0;width:100%;background:var(--read-bg)!important;overflow:hidden}
-#reader.flow-scroll #viewer{overflow:hidden!important}
+#reader.flow-scroll #viewer{overflow:visible}
 #viewer iframe{border:0!important;background:var(--read-bg)!important}
 .rload{position:absolute;inset:0;z-index:20;background:var(--read-bg)!important;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
@@ -595,15 +589,14 @@ body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;p
 <body>
 <input type="file" id="fi" multiple>
 <input type="file" id="folderFi" multiple webkitdirectory directory>
-<input type="file" id="backupFi" accept=".json,.bookmark-backup.json,.folio-backup.json,application/json">
-<input type="file" id="csvFi" accept=".csv,text/csv,text/plain">
+<input type="file" id="backupFi" accept=".json,.folio-backup.json,application/json">
 <div id="app">
 
   <!-- ════════ LIBRARY ════════ -->
   <div class="screen active" id="lib">
     <div class="hdr">
       <div class="hdr-left">
-        <h1>BookMark</h1>
+        <h1>Folio</h1>
       </div>
       <div class="hdr-actions">
         <button class="home-goal-btn" id="homeGoalBtn" type="button" title="Today's reading goal">
@@ -733,22 +726,11 @@ body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;p
           <div class="stval" id="spweek">0</div>
           <div class="stsub">last 7 days</div>
         </div>
-        <div class="stcard">
-          <div class="stlbl">Avg Pace</div>
-          <div class="stval" id="spaceavg">0.00</div>
-          <div class="stsub">pages/min</div>
-        </div>
-      </div>
-      <div class="chcard">
-        <h3>Last 7 Days</h3>
-        <div class="bchartwrap" id="chartwrap">
-          <div class="bchart" id="chart"></div>
-        </div>
       </div>
       <div class="chcard">
         <h3>Reading Pace · Last 7 Days</h3>
-        <div class="bchartwrap" id="paceChartWrap">
-          <div class="pacechart" id="paceChart"></div>
+        <div class="bchartwrap" id="chartwrap">
+          <div class="pacechart" id="chart"></div>
         </div>
       </div>
       <div class="year-books-card" id="booksYearCard"></div>
@@ -759,8 +741,6 @@ body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;p
           <button id="restoreBackupBtn" type="button">Restore Backup</button>
           <button id="protectDataBtn" type="button">Protect Database</button>
           <button id="folderRescanBtn" type="button">Rescan Folder</button>
-          <button id="manualSessionBtn" type="button">Add Manual Session</button>
-          <button id="importCsvBtn" type="button">Import CSV</button>
         </div>
         <div class="storage-note" id="storageStatus">Local database active.</div>
       </div>
@@ -872,6 +852,7 @@ body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;p
             <div class="setting-label">Layout</div>
             <div class="seg" id="flowSeg">
               <button data-flow="paginated">Pages</button>
+              <button data-flow="scrolled-doc">Vertical Scroll</button>
             </div>
             <div class="setting-label" style="margin-top:14px">Page Turn</div>
             <div class="seg" id="animSeg">
@@ -880,7 +861,6 @@ body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;p
               <button data-anim="none">None</button>
             </div>
             <div class="toggle-row" style="margin-top:14px"><span>Swipe to turn pages</span><button class="switch" id="swipeSwitch"></button></div>
-            <div class="toggle-row"><span>Keep screen awake</span><button class="switch" id="wakeSwitch"></button></div>
           </div>
         </div>
       </div>
@@ -965,11 +945,7 @@ body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;p
         <select id="dsBook"></select>
         <div class="row2">
           <div><label>Minutes</label><input type="number" id="dsMins" min="1" max="720" inputmode="numeric" placeholder="20"></div>
-          <div><label>Pages</label><input type="number" id="dsPages" min="0" max="5000" inputmode="numeric" placeholder="optional"></div>
-        </div>
-        <div class="row2">
           <div><label>Start time</label><input type="time" id="dsTime" value="20:00"></div>
-          <div><label>End time</label><input type="time" id="dsEndTime" placeholder="optional"></div>
         </div>
       </div>
       <div class="btnrow">
@@ -1018,7 +994,7 @@ body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;p
 </div>
 
 <script>
-const FOLIO_VERSION = 'v29-blue-reading-bars';
+const FOLIO_VERSION = 'v25-stats-pace';
 const CHARS_PER_PAGE = 1800;   // ≈ Apple Books / print pagination density
 
 function dbg(msg) {}
@@ -1087,7 +1063,7 @@ async function idbDelete(key) {
 const DEFAULT_SETTINGS = {
   theme:'paper', fontSize:100, font:'original', bold:false,
   lineHeight:1.6, margins:'normal', justify:false,
-  flow:'paginated', pageAnim:'slide', swipe:true, keepAwake:true, brightness:100,
+  flow:'paginated', pageAnim:'slide', swipe:true, brightness:100,
 };
 const A = {
   books: [], sessions: [], progress: {}, bookmarks: {},
@@ -1107,8 +1083,6 @@ const A = {
   reorderMode: false, draggingBookEl: null, dragPlaceholder: null, savedFolderName: '',
   selectedBookIds: new Set(), selectionMode: false, dragMoved: false,
   dragAutoScrollFrame: null, dragAutoScrollY: 0,
-  wakeLock: null, wakeLockWarned: false,
-  sessionsVisible: 10,
 };
 
 const STATE_KEYS = ['f_books','f_sessions','f_progress','f_reader_settings','f_goal','f_bookmarks','f_saved_folder_name'];
@@ -1169,7 +1143,6 @@ async function hydrate() {
   if (typeof saved.animation === 'boolean' && typeof saved.swipe !== 'boolean') saved.swipe = saved.animation;
   delete saved.animation;
   A.readerSettings = Object.assign({}, DEFAULT_SETTINGS, saved);
-  A.readerSettings.flow = 'paginated';  // vertical scrolling is intentionally disabled in reader mode
   // Books finished long ago by progress get a finished flag once.
   A.books.forEach(b => {
     if (!b.finished && (A.progress[b.id]?.pct || 0) >= 0.99) {
@@ -1832,7 +1805,6 @@ function openDetails(id) {
 const fi = document.getElementById('fi');
 const folderFi = document.getElementById('folderFi');
 const backupFi = document.getElementById('backupFi');
-const csvFi = document.getElementById('csvFi');
 
 function openLibraryTools() { openAppSheet('libraryToolsSheet'); }
 document.getElementById('addbtn').addEventListener('click', openLibraryTools);
@@ -1846,8 +1818,6 @@ wireToolButton('exportBackupBtn', exportBackup);
 wireToolButton('restoreBackupBtn', () => backupFi.click());
 wireToolButton('protectDataBtn', () => requestPersistentStorage(true));
 wireToolButton('folderRescanBtn', rescanFolder);
-wireToolButton('manualSessionBtn', () => openDaySheet(dayKey(new Date())));
-wireToolButton('importCsvBtn', () => csvFi?.click());
 
 document.querySelectorAll('[data-libtool]').forEach(b => b.addEventListener('click', () => {
   closeAppSheet('libraryToolsSheet');
@@ -1920,12 +1890,6 @@ backupFi.addEventListener('change', async e => {
   const file = e.target.files?.[0];
   if (file) await restoreBackup(file);
   backupFi.value='';
-});
-
-csvFi?.addEventListener('change', async e => {
-  const file = e.target.files?.[0];
-  if (file) await importCsvSessions(file);
-  csvFi.value='';
 });
 
 async function batchImportFiles(files, opts={}) {
@@ -2168,8 +2132,6 @@ function openDaySheet(k) {
   sel.innerHTML = `<option value="">No specific book</option>` +
     A.books.map(b=>`<option value="${b.id}">${esc(b.title)}</option>`).join('');
   document.getElementById('dsMins').value = '';
-  document.getElementById('dsPages').value = '';
-  document.getElementById('dsEndTime').value = '';
   document.getElementById('dsTime').value = (k === dayKey(new Date()))
     ? new Date().toTimeString().slice(0,5) : '20:00';
   renderDaySessions();
@@ -2195,7 +2157,7 @@ function renderDaySessions() {
       <div class="sdot${s.manual?' manual':''}"></div>
       <div class="sinf">
         <div class="sbook">${esc(s.bookTitle||'Reading session')}</div>
-        <div class="smeta">${new Date(s.start).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}${sessionPages(s) ? ` · ${sessionPages(s)} pg` : ''}${s.manual?' · added manually':''}</div>
+        <div class="smeta">${new Date(s.start).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}${s.manual?' · added manually':''}</div>
       </div>
       <div class="sdur">${fmt(s.secs)}</div>
       <button class="sdel" data-sid="${s.id}" title="Delete">✕</button>
@@ -2208,41 +2170,27 @@ function renderDaySessions() {
   }));
 }
 document.getElementById('dsAdd').addEventListener('click', async () => {
-  let mins = parseInt(document.getElementById('dsMins').value, 10);
-  const pages = Math.max(0, Math.round(parseNumberLoose(document.getElementById('dsPages').value) || 0));
+  const mins = parseInt(document.getElementById('dsMins').value, 10);
+  if (!mins || mins < 1) { toast('Enter how many minutes you read'); return; }
   const time = document.getElementById('dsTime').value || '20:00';
-  const endTime = document.getElementById('dsEndTime').value || '';
   const bookId = document.getElementById('dsBook').value || null;
   const bk = bookId ? A.books.find(b=>b.id===bookId) : null;
   const [hh,mm] = time.split(':').map(Number);
   const d = keyToDate(A.daySheetKey);
   d.setHours(hh||0, mm||0, 0, 0);
   if (d > new Date()) { toast("Can't log reading in the future"); return; }
-  let end = null;
-  if (endTime) {
-    const [eh,em] = endTime.split(':').map(Number);
-    end = keyToDate(A.daySheetKey);
-    end.setHours(eh||0, em||0, 0, 0);
-    if (end < d) end = new Date(end.getTime() + 86400000);
-    const calcMins = Math.round((end - d) / 60000);
-    if ((!mins || mins < 1) && calcMins > 0) mins = calcMins;
-  }
-  if (!mins || mins < 1) { toast('Enter minutes, or enter a start and end time'); return; }
   const secs = Math.min(720, mins) * 60;
-  if (!end) end = new Date(d.getTime()+secs*1000);
   A.sessions.push({
     id: uid(), manual: true,
     bookId, bookTitle: bk?.title || 'Manual entry',
     start: d.toISOString(),
-    end: end.toISOString(),
-    secs, p0: 0, p1: 0, pagesRead: pages,
+    end: new Date(d.getTime()+secs*1000).toISOString(),
+    secs, p0: 0, p1: 0, pagesRead: 0,
   });
   await persist();
   document.getElementById('dsMins').value = '';
-  document.getElementById('dsPages').value = '';
-  document.getElementById('dsEndTime').value = '';
   renderDaySessions(); renderJournal(); renderStats(); renderLib();
-  toast(`Added ${mins} min${pages ? ` · ${pages} pages` : ''} on ${d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}`);
+  toast(`Added ${mins} min on ${d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}`);
 });
 
 /* ── Journal: finished-books timeline ──────────────────────────── */
@@ -2314,55 +2262,24 @@ function renderStats() {
   const weekSessions = sessionsSince(weekAgo);
   const week  = weekSessions.reduce((a,s)=>a+(s.secs||0),0);
   const totalPages = A.sessions.reduce((a,s)=>a+sessionPages(s),0);
-  const totalMins  = A.sessions.reduce((a,s)=>a+sessionMinutes(s),0);
   const avgPages   = A.sessions.length ? totalPages/A.sessions.length : 0;
-  const avgPace    = totalMins > 0 ? totalPages/totalMins : 0;
   const weekPages  = weekSessions.reduce((a,s)=>a+sessionPages(s),0);
   document.getElementById('stot').textContent  = fmt(total);
   document.getElementById('sdone').textContent = done;
   document.getElementById('savg').textContent  = fmt(avg);
   document.getElementById('sweek').textContent = fmt(week);
-  document.getElementById('spages').textContent = nfmt(totalPages);
-  document.getElementById('spavg').textContent  = nfmt(Math.round(avgPages));
-  document.getElementById('spweek').textContent = nfmt(weekPages);
-  document.getElementById('spaceavg').textContent = avgPace ? avgPace.toFixed(2) : '0.00';
-  A.sessionsVisible = Math.max(10, A.sessionsVisible || 10);
-  renderChart(); renderPaceChart(); renderBooksReadThisYear(); renderSessions(); updateStorageStatus();
+  const spages = document.getElementById('spages'); if (spages) spages.textContent = nfmt(totalPages);
+  const spavg  = document.getElementById('spavg');  if (spavg)  spavg.textContent  = nfmt(Math.round(avgPages));
+  const spweek = document.getElementById('spweek'); if (spweek) spweek.textContent = nfmt(weekPages);
+  renderChart(); renderBooksReadThisYear(); renderSessions(); updateStorageStatus();
 }
 
 function renderChart() {
   const chart = document.getElementById('chart');
   const wrap  = document.getElementById('chartwrap');
-  const goal  = goalMinutes();
-  const map = secsByDay();
-  const days = [];
-  for (let i=6; i>=0; i--) {
-    const d = new Date(Date.now()-i*86400000);
-    const mins = Math.round((map[dayKey(d)]||0)/60);
-    days.push({ mins, today:i===0, met:mins>=goal,
-      lbl: i===0?'Today':d.toLocaleDateString('en-US',{weekday:'short'}) });
-  }
-  const max = Math.max(...days.map(d=>d.mins), goal, 1);
-  chart.innerHTML = days.map(d=>{
-    const h   = d.mins===0 ? 3 : Math.max(4,Math.round((d.mins/max)*72));
-    const cls = d.mins===0?'bar zero':`bar${d.met?' met':''}${d.today?' today':''}`;
-    return `<div class="bcol" title="${d.mins} min">
-      <div class="${cls}" style="height:${h}px"></div>
-      <div class="blbl">${d.lbl}</div>
-    </div>`;
-  }).join('');
-  wrap.querySelector('.goal-line')?.remove();
-  const gl = document.createElement('div');
-  gl.className = 'goal-line';
-  const bottom = 14 + Math.round((goal/max)*72);
-  gl.style.bottom = bottom + 'px';
-  gl.innerHTML = `<span>${goal}m goal</span>`;
-  wrap.appendChild(gl);
-}
-
-function renderPaceChart() {
-  const chart = document.getElementById('paceChart');
   if (!chart) return;
+  if (wrap) wrap.querySelector('.goal-line')?.remove();
+
   const days = [];
   for (let i=6; i>=0; i--) {
     const d = new Date(Date.now()-i*86400000);
@@ -2371,37 +2288,53 @@ function renderPaceChart() {
     const mins = sessions.reduce((a,s)=>a+sessionMinutes(s),0);
     const pages = sessions.reduce((a,s)=>a+sessionPages(s),0);
     const pace = mins > 0 && pages > 0 ? pages / mins : null;
-    days.push({ key, mins, pages, pace, lbl: i===0 ? 'Today' : d.toLocaleDateString('en-US',{weekday:'short'}) });
+    days.push({
+      key, mins, pages, pace,
+      lbl: i===0 ? 'Today' : d.toLocaleDateString('en-US',{weekday:'short'})
+    });
   }
+
   const valid = days.filter(d => Number.isFinite(d.pace));
   if (!valid.length) {
-    chart.innerHTML = `<div class="pace-empty">No page-based pace yet.<br>Add pages to sessions or import your CSV.</div>`;
+    chart.innerHTML = `<div class="pace-empty">No page-based pace yet.<br>Read after Folio finishes pagination to build this chart.</div>`;
     return;
   }
-  const w = 320, h = 160, l = 34, r = 14, t = 14, b = 28;
+
+  const w = 320, h = 160, l = 34, r = 12, t = 14, b = 30;
   const plotW = w - l - r, plotH = h - t - b;
-  const maxPace = Math.max(0.25, Math.ceil(Math.max(...valid.map(d=>d.pace))*100)/100);
-  const x = idx => l + (plotW * idx / Math.max(1, days.length-1));
-  const y = pace => t + plotH - ((pace || 0) / maxPace) * plotH;
-  const pts = days.map((d,i) => Number.isFinite(d.pace) ? {x:x(i), y:y(d.pace), d} : null);
-  const line = pts.filter(Boolean).map((p,i)=>(i?'L':'M') + p.x.toFixed(1) + ' ' + p.y.toFixed(1)).join(' ');
-  const fillPts = pts.filter(Boolean);
-  const fill = fillPts.length ? `${line} L ${fillPts[fillPts.length-1].x.toFixed(1)} ${t+plotH} L ${fillPts[0].x.toFixed(1)} ${t+plotH} Z` : '';
-  const grid = [0,.25,.5,.75,1].map(fr => {
-    const yy = t + plotH - fr*plotH;
-    const val = (fr*maxPace).toFixed(2);
-    return `<line class="pace-grid" x1="${l}" y1="${yy}" x2="${w-r}" y2="${yy}"></line><text class="pace-axis" x="2" y="${yy+3}">${val}</text>`;
-  }).join('');
-  const labels = days.map((d,i)=>`<text class="pace-axis" x="${x(i)}" y="${h-8}" text-anchor="middle">${d.lbl.slice(0,3)}</text>`).join('');
-  const dots = pts.filter(Boolean).map(p=>`<circle class="pace-dot" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4"><title>${p.d.lbl}: ${p.d.pace.toFixed(2)} pages/min</title></circle>`).join('');
-  chart.innerHTML = `<svg class="pace-svg" viewBox="0 0 ${w} ${h}" role="img" aria-label="Reading pace over the last 7 days">
-    ${grid}
-    ${fill ? `<path class="pace-fill" d="${fill}"></path>` : ''}
-    <path class="pace-line" d="${line}"></path>
-    ${dots}
-    ${labels}
-  </svg>
-  <div class="pace-legend"><span class="key"></span><span>Pages per minute</span></div>`;
+  const maxPace = Math.max(0.25, ...valid.map(d => d.pace)) * 1.15;
+  const x = i => l + (plotW * i / 6);
+  const y = v => t + plotH - ((v || 0) / maxPace) * plotH;
+
+  let path = '';
+  days.forEach((d,i) => {
+    if (!Number.isFinite(d.pace)) return;
+    path += `${path ? ' L' : 'M'} ${x(i).toFixed(1)} ${y(d.pace).toFixed(1)}`;
+  });
+
+  const firstIdx = days.findIndex(d => Number.isFinite(d.pace));
+  const lastIdx = days.length - 1 - [...days].reverse().findIndex(d => Number.isFinite(d.pace));
+  const area = firstIdx >= 0 && lastIdx >= firstIdx
+    ? `${path} L ${x(lastIdx).toFixed(1)} ${y(0).toFixed(1)} L ${x(firstIdx).toFixed(1)} ${y(0).toFixed(1)} Z`
+    : '';
+
+  const gridVals = [maxPace, maxPace/2, 0];
+  const grid = gridVals.map(v => `
+    <line class="pace-grid" x1="${l}" y1="${y(v).toFixed(1)}" x2="${w-r}" y2="${y(v).toFixed(1)}"></line>
+    <text class="pace-axis" x="0" y="${(y(v)+3).toFixed(1)}">${v.toFixed(2)}</text>`).join('');
+  const xlabels = days.map((d,i) => `<text class="pace-axis" x="${x(i).toFixed(1)}" y="${h-8}" text-anchor="middle">${esc(d.lbl.slice(0,3))}</text>`).join('');
+  const dots = days.map((d,i) => Number.isFinite(d.pace)
+    ? `<circle class="pace-dot" cx="${x(i).toFixed(1)}" cy="${y(d.pace).toFixed(1)}" r="4"><title>${d.lbl}: ${d.pace.toFixed(2)} pages/min · ${Math.round(d.pages)} pages</title></circle>`
+    : '').join('');
+
+  chart.innerHTML = `<svg class="pace-svg" viewBox="0 0 ${w} ${h}" role="img" aria-label="Reading pace over the last seven days">
+      ${grid}
+      ${area ? `<path class="pace-fill" d="${area}"></path>` : ''}
+      <path class="pace-line" d="${path}"></path>
+      ${dots}
+      ${xlabels}
+    </svg>
+    <div class="pace-legend"><span class="key"></span>Pages per minute</div>`;
 }
 
 const YEARLY_BOOK_GOAL = 10;
@@ -2431,164 +2364,35 @@ function renderBooksReadThisYear() {
 }
 
 function renderSessions() {
-  const list = document.getElementById('slist');
-  const all = [...A.sessions]
-    .sort((a,b)=>new Date(b.start)-new Date(a.start));
-  if (!all.length) {
-    A.sessionsVisible = 10;
+  const list   = document.getElementById('slist');
+  const recent = [...A.sessions]
+    .sort((a,b)=>new Date(b.start)-new Date(a.start)).slice(0,25);
+  if (!recent.length) {
     list.innerHTML='<div class="nodata">No sessions yet.<br>Open a book to start reading!</div>';
     return;
   }
-  A.sessionsVisible = Math.max(10, A.sessionsVisible || 10);
-  const shown = all.slice(0, A.sessionsVisible);
-  const rows = shown.map(s=>{
+  list.innerHTML = recent.map(s=>{
     const delta = Math.round(((s.p1||0)-(s.p0||0))*100);
     const pages = sessionPages(s);
-    const pace = pages && sessionMinutes(s) ? ` · ${(pages/sessionMinutes(s)).toFixed(2)} pg/min` : '';
-    const title = s.bookTitle || 'Reading session';
-    const extra = `${s.manual ? 'added manually' : (delta>0 ? `+${delta}% progress` : 'session')}${pages ? ` · ${pages} pg${pace}` : ''}`;
+    const mins = sessionMinutes(s);
+    const pace = pages && mins ? `${(pages/mins).toFixed(2)} pages/min` : '';
+    const extra = s.manual ? 'added manually' : (pages ? `${nfmt(pages)} pages${pace ? ` · ${pace}` : ''}` : (delta>0 ? `+${delta}% progress` : 'session'));
     return `<div class="srow">
       <div class="sdot${s.manual?' manual':''}"></div>
       <div class="sinf">
-        <div class="sbook">${esc(title)}</div>
+        <div class="sbook">${esc(s.bookTitle)}</div>
         <div class="smeta">${fmtDate(s.start)} · ${extra}</div>
       </div>
       <div class="sdur">${fmt(s.secs)}</div>
       <button class="sdel" data-sid="${s.id}" title="Delete">✕</button>
     </div>`;
   }).join('');
-  const remaining = all.length - shown.length;
-  const more = remaining > 0
-    ? `<button class="show-more-sessions" id="showMoreSessions" type="button">Show 10 More · ${remaining} remaining</button>`
-    : '';
-  list.innerHTML = rows + more;
   list.querySelectorAll('.sdel').forEach(b => b.addEventListener('click', async () => {
     if (!confirm('Delete this reading session?')) return;
     A.sessions = A.sessions.filter(s=>s.id!==b.dataset.sid);
-    A.sessionsVisible = Math.min(Math.max(10, A.sessionsVisible || 10), Math.max(10, A.sessions.length));
     await persist();
-    renderStats(); renderLib(); renderJournal();
+    renderStats(); renderLib();
   }));
-  document.getElementById('showMoreSessions')?.addEventListener('click', () => {
-    A.sessionsVisible = Math.min(all.length, (A.sessionsVisible || 10) + 10);
-    renderSessions();
-  });
-}
-
-
-/* ── CSV import / manual session helpers ───────────────────────── */
-function parseNumberLoose(v) {
-  if (v === null || v === undefined) return 0;
-  const n = parseFloat(String(v).replace(/[^0-9.\-]/g, ''));
-  return Number.isFinite(n) ? n : 0;
-}
-function parseCsvText(text) {
-  const rows = [];
-  let row = [], cell = '', q = false;
-  for (let i=0; i<text.length; i++) {
-    const ch = text[i], next = text[i+1];
-    if (q) {
-      if (ch === '"' && next === '"') { cell += '"'; i++; }
-      else if (ch === '"') q = false;
-      else cell += ch;
-    } else {
-      if (ch === '"') q = true;
-      else if (ch === ',') { row.push(cell); cell = ''; }
-      else if (ch === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
-      else if (ch !== '\r') cell += ch;
-    }
-  }
-  row.push(cell); rows.push(row);
-  return rows.filter(r => r.some(c => String(c).trim() !== ''));
-}
-function normHeader(s) { return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
-function rowGetter(headers, row) {
-  const hmap = {};
-  headers.forEach((h,i) => hmap[normHeader(h)] = i);
-  return names => {
-    for (const name of names) {
-      const idx = hmap[normHeader(name)];
-      if (idx !== undefined) return String(row[idx] ?? '').trim();
-    }
-    return '';
-  };
-}
-function parseDateParts(dateStr) {
-  const s = String(dateStr || '').trim();
-  const now = new Date();
-  if (!s) return [now.getFullYear(), now.getMonth(), now.getDate()];
-  let m = s.match(/^(\d{4})[-\/](\d{1,2})(?:[-\/](\d{1,2}))?/);
-  if (m) return [Number(m[1]), Number(m[2])-1, Number(m[3] || 1)];
-  m = s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})/);
-  if (m) return [Number(m[3].length === 2 ? '20'+m[3] : m[3]), Number(m[1])-1, Number(m[2])];
-  const d = new Date(s);
-  if (!Number.isNaN(d.getTime())) return [d.getFullYear(), d.getMonth(), d.getDate()];
-  return [now.getFullYear(), now.getMonth(), now.getDate()];
-}
-function applyTimeParts(d, timeStr) {
-  const s = String(timeStr || '').trim();
-  let h = 0, m = 0;
-  const mt = s.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?/i);
-  if (mt) {
-    h = Number(mt[1]); m = Number(mt[2] || 0);
-    const ap = (mt[3] || '').toUpperCase();
-    if (ap === 'PM' && h < 12) h += 12;
-    if (ap === 'AM' && h === 12) h = 0;
-  }
-  d.setHours(h||0, m||0, 0, 0);
-  return d;
-}
-function makeCsvDate(dateStr, timeStr) {
-  const [y,m,d] = parseDateParts(dateStr);
-  return applyTimeParts(new Date(y,m,d), timeStr);
-}
-function csvSessionDuplicate(candidate) {
-  const key = s => [s.bookTitle || '', new Date(s.start).toISOString(), Math.round(s.secs||0), sessionPages(s)].join('|').toLowerCase();
-  const ck = key(candidate);
-  return A.sessions.some(s => key(s) === ck);
-}
-async function importCsvSessions(file) {
-  try {
-    const rows = parseCsvText(await file.text());
-    if (rows.length < 2) { toast('CSV has no session rows'); return; }
-    const headers = rows[0];
-    let added = 0, skipped = 0;
-    for (const row of rows.slice(1)) {
-      const get = rowGetter(headers, row);
-      const title = get(['Title','Book','Book Title']) || 'CSV Import';
-      const dateStr = get(['Date','Session Date','Day']) || get(['Month']);
-      const startTime = get(['Start Time','Start']);
-      const endTime = get(['End Time','End']);
-      let mins = Math.round(parseNumberLoose(get(['Session Minutes','Minutes','Mins'])));
-      const pages = Math.max(0, Math.round(parseNumberLoose(get(['Session Pages','Pages','Pages Read']))));
-      const pctRaw = parseNumberLoose(get(['Percentage','Percent','Progress']));
-      const start = makeCsvDate(dateStr, startTime || '00:00');
-      let end = endTime ? makeCsvDate(dateStr, endTime) : null;
-      if (end && end < start) end = new Date(end.getTime() + 86400000);
-      if ((!mins || mins < 1) && end) mins = Math.round((end - start)/60000);
-      if (!mins || mins < 1) { skipped++; continue; }
-      if (!end) end = new Date(start.getTime() + mins*60000);
-      const bk = A.books.find(b => String(b.title||'').trim().toLowerCase() === String(title).trim().toLowerCase());
-      const total = bk ? bookPageCount(bk.id) : 0;
-      const p1 = total && pctRaw ? Math.min(1, pctRaw > 1 ? pctRaw/100 : pctRaw) : 0;
-      const p0 = total && pages ? Math.max(0, p1 - (pages/total)) : 0;
-      const candidate = {
-        id: uid(), manual: true, source: 'csv',
-        bookId: bk?.id || null, bookTitle: title,
-        start: start.toISOString(), end: end.toISOString(),
-        secs: Math.min(720, mins) * 60,
-        p0, p1, pagesRead: pages,
-      };
-      if (csvSessionDuplicate(candidate)) { skipped++; continue; }
-      A.sessions.push(candidate); added++;
-    }
-    await persist();
-    renderJournal(); renderStats(); renderLib();
-    toast(`CSV import complete · ${added} added${skipped ? ` · ${skipped} skipped` : ''}`);
-  } catch(e) {
-    console.error('CSV import failed:', e);
-    toast('CSV import failed');
-  }
 }
 
 
@@ -2596,9 +2400,9 @@ async function importCsvSessions(file) {
 function backupPayload() {
   normalizeBookOrder();
   return {
-    app: 'BookMark', schema: 3, previousApp: 'Folio', version: FOLIO_VERSION,
+    app: 'Folio', schema: 2, version: FOLIO_VERSION,
     exportedAt: new Date().toISOString(),
-    note: 'This backup includes BookMark reading data and library metadata. EPUB files themselves are not embedded.',
+    note: 'This backup includes Folio reading data and library metadata. EPUB files themselves are not embedded.',
     books: A.books, sessions: A.sessions, progress: A.progress,
     bookmarks: A.bookmarks, goal: A.goal, readerSettings: A.readerSettings,
     savedFolderName: A.savedFolderName || ''
@@ -2609,10 +2413,10 @@ async function exportBackup() {
   try {
     const payload = backupPayload();
     const json = JSON.stringify(payload, null, 2);
-    const name = `bookmark-backup-${dayKey(new Date())}.json`;
+    const name = `folio-backup-${dayKey(new Date())}.json`;
     const file = new File([json], name, { type: 'application/json' });
     if (navigator.canShare && navigator.canShare({ files:[file] })) {
-      await navigator.share({ files:[file], title:'BookMark Backup' });
+      await navigator.share({ files:[file], title:'Folio Backup' });
       toast('Backup exported');
       return;
     }
@@ -2631,8 +2435,8 @@ async function restoreBackup(file) {
   try {
     const text = await file.text();
     const data = JSON.parse(text);
-    if (!data || !['BookMark','Folio'].includes(data.app)) throw new Error('Not a BookMark backup');
-    const msg = 'Restore this BookMark backup? This replaces library metadata, stats, journal, progress, bookmarks, and settings. EPUB files are not included in backups.';
+    if (!data || data.app !== 'Folio') throw new Error('Not a Folio backup');
+    const msg = 'Restore this Folio backup? This replaces library metadata, stats, journal, progress, bookmarks, and settings. EPUB files are not included in backups.';
     if (!confirm(msg)) return;
     A.books = Array.isArray(data.books) ? data.books : [];
     A.sessions = Array.isArray(data.sessions) ? data.sessions : [];
@@ -2647,7 +2451,7 @@ async function restoreBackup(file) {
     toast('Backup restored');
   } catch(e) {
     console.error('Restore failed:', e);
-    toast('Restore failed — invalid BookMark backup');
+    toast('Restore failed — invalid Folio backup');
   }
 }
 
@@ -2677,12 +2481,11 @@ function themeDef() {
 
 function applyReaderSettings() {
   const s = A.readerSettings;
-  s.flow = 'paginated';
   const r = document.getElementById('reader');
   if (r) {
     THEMES.forEach(t => r.classList.remove('t-'+t.id));
     r.classList.add('t-'+themeDef().id);
-    r.classList.remove('flow-scroll');
+    r.classList.toggle('flow-scroll', s.flow !== 'paginated');
   }
   // Brightness dimmer
   const bo = document.getElementById('brightOverlay');
@@ -2705,7 +2508,6 @@ function applyEpubTheme() {
     'background': t.bg + ' !important',
     'color': t.fg + ' !important',
     'line-height': `${s.lineHeight} !important`,
-    'overflow': 'hidden !important',
   };
   const para = { 'line-height': `${s.lineHeight} !important` };
   if (s.bold)   { body['font-weight'] = '600 !important'; para['font-weight'] = '600 !important'; }
@@ -2729,8 +2531,6 @@ function applyEpubTheme() {
         doc.documentElement.style.background = t.bg;
         doc.body.style.background = t.bg;
         doc.body.style.color = t.fg;
-        doc.documentElement.style.overflow = 'hidden';
-        doc.body.style.overflow = 'hidden';
       } catch(_) {}
     });
   } catch(_) {}
@@ -2754,37 +2554,10 @@ function syncSettingsUI() {
   document.getElementById('boldSwitch')?.classList.toggle('on', !!s.bold);
   document.getElementById('justifySwitch')?.classList.toggle('on', !!s.justify);
   document.getElementById('swipeSwitch')?.classList.toggle('on', !!s.swipe);
-  document.getElementById('wakeSwitch')?.classList.toggle('on', !!s.keepAwake);
   const br = document.getElementById('brightSlider');
   if (br && Number(br.value) !== (s.brightness||100)) br.value = s.brightness||100;
   document.getElementById('animSeg').style.opacity = s.flow==='paginated' ? '1':'0.4';
   document.getElementById('animSeg').style.pointerEvents = s.flow==='paginated' ? 'auto':'none';
-}
-
-async function requestWakeLock(showToast = false) {
-  const reader = document.getElementById('reader');
-  if (!A.readerSettings.keepAwake || !reader?.classList.contains('active')) return;
-  if (!('wakeLock' in navigator)) {
-    if (showToast || !A.wakeLockWarned) toast('Keep Screen Awake is not available on this device/browser.');
-    A.wakeLockWarned = true;
-    return;
-  }
-  try {
-    if (A.wakeLock && !A.wakeLock.released) return;
-    A.wakeLock = await navigator.wakeLock.request('screen');
-    A.wakeLock.addEventListener('release', () => { A.wakeLock = null; });
-    A.wakeLockWarned = false;
-  } catch(e) {
-    console.warn('Wake lock failed:', e);
-    if (showToast || !A.wakeLockWarned) toast('Keep Screen Awake could not be enabled.');
-    A.wakeLockWarned = true;
-  }
-}
-
-async function releaseWakeLock() {
-  if (!A.wakeLock) return;
-  try { await A.wakeLock.release(); } catch(_) {}
-  A.wakeLock = null;
 }
 
 /* ── Pagination: fixed virtual pages, Apple-Books density ──────── */
@@ -2804,6 +2577,8 @@ async function setupLocations(book, bookId) {
       if (total > 0) {
         A.totalPages = total;
         A.locationsReady = true;
+        const meta = A.books.find(b => b.id === bookId);
+        if (meta && meta.pageCount !== total) { meta.pageCount = total; if (!A.progress[bookId]) A.progress[bookId] = {}; A.progress[bookId].pageCount = total; persist(); }
         refreshLocationStatus();
         return;
       }
@@ -2814,6 +2589,10 @@ async function setupLocations(book, bookId) {
     if (A.epubBook !== book) return;                 // book was closed mid-generate
     A.totalPages = book.locations.total || (book.locations.length?.()) || 0;
     A.locationsReady = A.totalPages > 0;
+    if (A.totalPages > 0) {
+      const meta = A.books.find(b => b.id === bookId);
+      if (meta && meta.pageCount !== A.totalPages) { meta.pageCount = A.totalPages; if (!A.progress[bookId]) A.progress[bookId] = {}; A.progress[bookId].pageCount = A.totalPages; persist(); }
+    }
     try { await idbSet(cacheKey, book.locations.save()); } catch(_) {}
     refreshLocationStatus();
   } catch(e) { console.error('Location generation failed:', e); }
@@ -3083,11 +2862,6 @@ function wireReaderControlsOnce() {
     if (e.touches.length !== 1) return;
     A.swipeX = e.touches[0].clientX; A.swipeY = e.touches[0].clientY; A.didSwipe = false;
   }, {passive:true});
-  rbody.addEventListener('touchmove', e => {
-    if (!document.getElementById('reader')?.classList.contains('active')) return;
-    if (document.querySelector('#reader .sheet-backdrop.on')) return;
-    if (e.touches && e.touches.length === 1) e.preventDefault();
-  }, {passive:false});
   rbody.addEventListener('touchend', e => {
     if (!A.readerSettings.swipe || A.readerSettings.flow !== 'paginated') return;
     if (A.didSwipe || !e.changedTouches.length) return;
@@ -3159,15 +2933,11 @@ function wireReaderControlsOnce() {
   /* Switches */
   const wireSwitch = (id, key, after) => $(id).addEventListener('click', async () => {
     A.readerSettings[key] = !A.readerSettings[key];
-    applyReaderSettings(); await persist(); if (after) await after();
+    applyReaderSettings(); await persist(); if (after) after();
   });
   wireSwitch('boldSwitch', 'bold');
   wireSwitch('justifySwitch', 'justify');
   wireSwitch('swipeSwitch', 'swipe');
-  wireSwitch('wakeSwitch', 'keepAwake', async () => {
-    if (A.readerSettings.keepAwake) await requestWakeLock(true);
-    else await releaseWakeLock();
-  });
 
   /* Segmented controls */
   $('lineSeg').querySelectorAll('button').forEach(b =>
@@ -3188,8 +2958,10 @@ function wireReaderControlsOnce() {
     }));
   $('flowSeg').querySelectorAll('button').forEach(b =>
     b.addEventListener('click', async () => {
-      A.readerSettings.flow = 'paginated';
+      if (A.readerSettings.flow === b.dataset.flow) return;
+      A.readerSettings.flow = b.dataset.flow;
       applyReaderSettings(); await persist();
+      await remountRendition();
     }));
 
   /* Brightness */
@@ -3225,7 +2997,6 @@ async function openReader(bookId) {
   document.getElementById('bnav').style.display = 'none';
   wireReaderControlsOnce();
   applyReaderSettings();
-  requestWakeLock();
 
   const stored = await getEpub(bookId);
   if (!stored) {
@@ -3272,8 +3043,10 @@ function attachRendition(rend, bookId) {
 }
 
 function renditionOpts() {
-  A.readerSettings.flow = 'paginated';
-  return { width:'100%', height:'100%', spread:'none', flow:'paginated', manager:'default' };
+  const flow = A.readerSettings.flow === 'paginated' ? 'paginated' : 'scrolled-doc';
+  return flow === 'paginated'
+    ? { width:'100%', height:'100%', spread:'none', flow:'paginated', manager:'default' }
+    : { width:'100%', height:'100%', spread:'none', flow:'scrolled-doc', manager:'continuous' };
 }
 
 async function mountEpub(buf, bkMeta) {
@@ -3343,7 +3116,6 @@ function teardown() {
 }
 
 function closeReader(save = true) {
-  releaseWakeLock();
   if (save) stopTimer();
   else if (A.timerInt) { clearInterval(A.timerInt); A.timerInt = null; }
   teardown();
@@ -3378,14 +3150,13 @@ function stopTimer() {
   const bk = A.books.find(b => b.id === A.bookId);
   const prog = A.progress[A.bookId] || {};
   const p1 = prog.pct || A.sessP0;
-  const totalPages = bookPageCount(A.bookId);
-  const pagesRead = totalPages ? Math.max(0, Math.round((p1 - A.sessP0) * totalPages)) : 0;
+  const pageTotal = Math.round(bk?.pageCount || prog.pageCount || A.totalPages || 0);
+  const pagesRead = pageTotal ? Math.max(0, Math.round(Math.max(0, p1 - A.sessP0) * pageTotal)) : 0;
   A.sessions.push({
     id: uid(), bookId: A.bookId, bookTitle: bk?.title || 'Unknown',
     start: new Date(Date.now() - A.elapsed*1000).toISOString(),
     end: new Date().toISOString(),
-    secs: A.elapsed, p0: A.sessP0, p1,
-    pagesRead,
+    secs: A.elapsed, p0: A.sessP0, p1, pagesRead,
   });
   if (!A.progress[A.bookId]) A.progress[A.bookId] = {};
   A.progress[A.bookId].totalSecs = (A.progress[A.bookId].totalSecs||0) + A.elapsed;
@@ -3395,11 +3166,6 @@ function stopTimer() {
 
 document.addEventListener('visibilitychange', () => {
   if (A.timerInt) A.paused = document.hidden;
-  if (document.hidden) {
-    releaseWakeLock();
-  } else if (document.getElementById('reader')?.classList.contains('active')) {
-    requestWakeLock();
-  }
 });
 
 /* ── Boot ──────────────────────────────────────────────────────── */
