@@ -117,6 +117,11 @@ html,body{height:100%;height:100dvh;background:#C8C3BC;
 .pt{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
 .pf{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
 .pl{font-size:10px;color:var(--sub);margin-top:4px;font-weight:500}
+.book-stat-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px}
+.book-stat-row .pl{margin-top:0;min-width:0}
+.book-status{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.book-time{color:var(--accent);font-weight:800;white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
+.book-date-range{font-size:10px;color:var(--sub);margin-top:3px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .morebtn{position:absolute;top:7px;right:7px;background:rgba(0,0,0,.5);
   border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
@@ -1049,7 +1054,7 @@ body.reader-open{background:var(--read-bg)!important;overflow:hidden!important;p
 </div>
 
 <script>
-const FOLIO_VERSION = 'v33-session-edit-polish';
+const FOLIO_VERSION = 'v34-library-read-stats';
 const CHARS_PER_PAGE = 1800;   // ≈ Apple Books / print pagination density
 
 function dbg(msg) {}
@@ -1396,6 +1401,53 @@ const GRADS = [
   'linear-gradient(135deg,#5F0F40,#9A031E)','linear-gradient(135deg,#1D3557,#457B9D)',
 ];
 
+function normalizeBookTitleForStats(v) {
+  return String(v || '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+function sessionBelongsToBook(s, bk) {
+  if (!s || !bk) return false;
+  if (s.bookId && s.bookId === bk.id) return true;
+  const st = normalizeBookTitleForStats(s.bookTitle);
+  const bt = normalizeBookTitleForStats(bk.title);
+  return !!st && !!bt && st === bt;
+}
+function bookReadingStats(bk) {
+  const sessions = A.sessions
+    .filter(s => sessionBelongsToBook(s, bk))
+    .filter(s => Number(s.secs || 0) > 0 && s.start)
+    .sort((a,b) => new Date(a.start) - new Date(b.start));
+  if (!sessions.length) return null;
+  const totalSecs = sessions.reduce((a,s) => a + Number(s.secs || 0), 0);
+  const first = new Date(sessions[0].start);
+  const lastSession = sessions[sessions.length - 1];
+  const last = new Date(lastSession.end || lastSession.start);
+  return { sessions, totalSecs, first, last };
+}
+function compactBookDate(d, includeYear=false) {
+  const opts = includeYear ? {month:'short',day:'numeric',year:'numeric'} : {month:'short',day:'numeric'};
+  return d.toLocaleDateString('en-US', opts);
+}
+function formatBookDateRange(first, last) {
+  if (!(first instanceof Date) || isNaN(first) || !(last instanceof Date) || isNaN(last)) return '';
+  const sameDay = first.toDateString() === last.toDateString();
+  const sameYear = first.getFullYear() === last.getFullYear();
+  if (sameDay) return compactBookDate(first, !sameYear);
+  if (sameYear && first.getMonth() === last.getMonth()) {
+    return `${first.toLocaleDateString('en-US',{month:'short'})} ${first.getDate()}–${last.getDate()}`;
+  }
+  return `${compactBookDate(first, !sameYear)}–${compactBookDate(last, !sameYear)}`;
+}
+function renderLibraryBookFooter(bk, stat) {
+  const rs = bookReadingStats(bk);
+  if (!rs) return `<div class="pl">${esc(stat)}</div>`;
+  const range = formatBookDateRange(rs.first, rs.last);
+  return `<div class="book-stat-row"><div class="pl book-status">${esc(stat)}</div><div class="pl book-time">${esc(fmt(rs.totalSecs))}</div></div>${range ? `<div class="book-date-range">${esc(range)}</div>` : ''}`;
+}
+
 function renderLib() {
   normalizeBookOrder();
   const totalSecs = A.sessions.reduce((a,s)=>a+(s.secs||0),0);
@@ -1441,7 +1493,7 @@ function renderLib() {
         <div class="btitle">${esc(bk.title)}</div>
         <div class="bauth">${esc(bk.author)}</div>
         <div class="pt"><div class="pf" style="width:${pct}%"></div></div>
-        <div class="pl">${stat}</div>
+        ${renderLibraryBookFooter(bk, stat)}
       </div>
     </div>`;
   }).join('');
